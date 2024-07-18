@@ -53,7 +53,7 @@ When downloading automatically failed, you can manually download:
 
 Copy the **TrainedCheckPoint Files(`models/` + `logs/`)** from <href> http://47.93.21.181/lucapcycle/TrainedCheckPoint/* </href> into the project.  
 
-### Using    
+### Usage    
 Firstly, predict whether a sequence has phosphate-solubilizing functionality.  
 The inference script: **`src/prediction.py`** or  **`src/prediction.sh`**    
 
