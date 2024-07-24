@@ -102,8 +102,8 @@ def learn(args):
 
 
 def apply(args):
-    bpe_codes_prot = codecs.open(args.codes_file)
-    bpe = BPE(codes=bpe_codes_prot)
+    bpe_codes = codecs.open(args.codes_file)
+    bpe = BPE(codes=bpe_codes)
     bpe.process_lines(args.infile, open(args.outfile, "w"), num_workers=args.num_workers)
 
 
@@ -129,8 +129,8 @@ def subword_vocab_2_token_vocab(args):
 
 
 def tokenize(args):
-    bpe_codes_prot = codecs.open(args.codes_file)
-    bpe = BPE(bpe_codes_prot, merges=-1, separator='')
+    bpe_codes = codecs.open(args.codes_file)
+    bpe = BPE(bpe_codes, merges=-1, separator='')
     p = bpe.process_line(args.seq).split()
     return p
 

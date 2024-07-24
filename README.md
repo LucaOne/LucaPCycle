@@ -63,7 +63,7 @@ The inference script: **`src/prediction.py`** or  **`src/prediction.sh`**
 cd src/
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
 python prediction.py \
-    --fasta ../test_data/examples.fasta \
+    --input_file ../test_data/examples.fasta \
     --llm_truncation_seq_length 4096 \
     --model_path .. \
     --save_path ../predicted_results/test_data/examples_predicted.csv \
@@ -86,7 +86,7 @@ Then, for the sequences predicted to be positive in the **2-classification** inf
 cd src/
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
 python prediction.py \
-    --fasta ../test_data/example_positives.fasta \
+    --input_file ../test_data/example_positives.fasta \
     --llm_truncation_seq_length 4096 \
     --model_path .. \
     --save_path ../predicted_results/test_data/example_positives_fine_grained_predicted.csv \
@@ -104,7 +104,7 @@ python prediction.py \
 
 #### Parameters   
 1) Input data parameters:     
-* fasta: `Path`, the input fasta filepath(for a batch samples)   
+* input_file: `Path`, the input filepath(for a batch samples, format: `fasta` or `csv`(contain header, columns: `seq_id`, `seq`))   
 * seq_id: `str`, the seq id(for one sample)     
 * seq: `str`, the sequence(for one sample)      
 * save_path: `Path`, the saved dir path of the batch samples predicted results(only for batch prediction)          

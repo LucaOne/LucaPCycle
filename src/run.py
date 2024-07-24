@@ -280,11 +280,11 @@ def get_args():
     # for pair
     parser.add_argument("--seq_max_length_a", default=None, type=int, help="the length of input atom sequence more than max length will be truncated, shorter will be padded.")
     parser.add_argument("--matrix_max_length_a", default=None, type=int, help="the length of input atom embedding more than max length will be truncated, shorter will be padded.")
-    parser.add_argument("--embedding_input_size_a", default=None, type=int, help="atom_embedding_input_size")
+    parser.add_argument("--embedding_input_size_a", default=None, type=int, help="a embedding_input_size")
 
     parser.add_argument("--seq_max_length_b", default=None, type=int, help="the length of input atom sequence more than max length will be truncated, shorter will be padded.")
     parser.add_argument("--matrix_max_length_b", default=None, type=int, help="the length of input atom embedding more than max length will be truncated, shorter will be padded.")
-    parser.add_argument("--embedding_input_size_b", default=None, type=int, help="atom_embedding_input_size")
+    parser.add_argument("--embedding_input_size_b", default=None, type=int, help="b embedding_input_size")
 
     parser.add_argument("--not_seq_encoder_shared", action="store_true",  help="shared the seq encoder for two kind of seq types")
     parser.add_argument("--not_matrix_encoder_shared", action="store_true",  help="shared the seq encoder for two kind of matrix types")
@@ -477,7 +477,7 @@ def get_model(args):
     model_config.self_atten = args.self_atten
     model_config.cross_atten = args.cross_atten
 
-    model_config.max_position_embeddings = args.seq_max_length
+    model_config.max_position_embeddings = args.seq_max_length + int(args.prepend_bos) + int(args.append_eos)
 
     if args.classifier_size:
         model_config.classifier_size = args.classifier_size
@@ -495,8 +495,8 @@ def get_model(args):
     if args.seq_subword:
         seq_tokenizer_class = BertTokenizer
         seq_tokenizer = BertTokenizer(args.seq_vocab_path, do_lower_case=args.do_lower_case)
-        bpe_codes_prot = codecs.open(args.codes_file)
-        seq_subword = BPE(bpe_codes_prot, merges=-1, separator='')
+        bpe_codes = codecs.open(args.codes_file)
+        seq_subword = BPE(bpe_codes, merges=-1, separator='')
         model_config.cls_token_id = seq_tokenizer.cls_token_id
         model_config.sep_token_id = seq_tokenizer.sep_token_id
     else:
@@ -603,6 +603,8 @@ def main():
         "seq_max_length": args.seq_max_length,
         "vector_dirpath": args.vector_dirpath,
         "matrix_dirpath": args.matrix_dirpath,
+        "prepend_bos": True,
+        "append_eos": True,
         "local_rank": args.local_rank
     }
 
@@ -630,6 +632,11 @@ def main():
         truncation_matrix_length=model_config.matrix_max_length,
         ignore_index=model_config.ignore_index,
         non_ignore=args.non_ignore,
+        padding_idx=0,
+        unk_idx=1,
+        cls_idx=2,
+        eos_idx=3,
+        mask_idx=4,
         prepend_bos=not args.not_prepend_bos,
         append_eos=not args.not_append_eos
     )
@@ -703,7 +710,8 @@ def main():
             matrix_dirpath=args.matrix_dirpath,
             inference=False,
             header=True,
-            shuffle=True
+            shuffle=True,
+            seed=args.seed
         )
     else:
         print("n_gpu: %d, use: DataLoader" % args.n_gpu)

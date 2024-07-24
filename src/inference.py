@@ -97,9 +97,12 @@ def load_model(args, model_dir):
     seq_subword = None
     if args.input_type in ["seq", "seq_matrix", "seq_vector"]:
         if args.seq_subword:
-            seq_tokenizer = BertTokenizer.from_pretrained(os.path.join(model_dir, "sequence"), do_lower_case=args.do_lower_case)
-            bpe_codes_prot = codecs.open(args.codes_file)
-            seq_subword = BPE(bpe_codes_prot, merges=-1, separator='')
+            if os.path.exists(os.path.join(model_dir, "sequence")):
+                seq_tokenizer = BertTokenizer.from_pretrained(os.path.join(model_dir, "sequence"), do_lower_case=args.do_lower_case)
+            else:
+                seq_tokenizer = BertTokenizer.from_pretrained(os.path.join(model_dir, "tokenizer"), do_lower_case=args.do_lower_case)
+            bpe_codes = codecs.open(args.codes_file)
+            seq_subword = BPE(bpe_codes, merges=-1, separator='')
         else:
             seq_tokenizer = Alphabet.from_predefined(args.seq_vocab_path)
     else:
@@ -234,13 +237,13 @@ def load_environment(args):
         args.output_mode = config["output_mode"]
         args.device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         args.seq_max_length = config["seq_max_length"]
-        if args.seq_max_length and args.seq_max_length > args.truncation_seq_length:
+        if args.seq_max_length is None or args.seq_max_length < args.truncation_seq_length:
             args.seq_max_length = args.truncation_seq_length
         args.no_position_embeddings = config["no_position_embeddings"]
         args.no_token_type_embeddings = config["no_token_type_embeddings"]
         args.embedding_input_size = config["embedding_input_size"]
         args.matrix_max_length = config["matrix_max_length"]
-        if args.truncation_seq_length and args.matrix_max_length > args.truncation_seq_length:
+        if args.matrix_max_length is None or args.matrix_max_length < args.truncation_seq_length:
             args.matrix_max_length = args.truncation_seq_length
         args.trunc_type = config["trunc_type"]
         args.llm_dir = config["llm_dir"]
@@ -265,12 +268,16 @@ def load_environment(args):
     model_config, seq_subword, seq_tokenizer, model, label_id_2_name, label_name_2_id = load_model(args, model_dir)
     encoder_config = {
         "llm_type": args.llm_type,
+        "llm_version": args.llm_version,
+        "llm_step": args.llm_step,
         "llm_dirpath": args.llm_dirpath,
         "input_type": args.input_type,
         "trunc_type": args.trunc_type,
         "seq_max_length": args.seq_max_length,
         "vector_dirpath": args.vector_dirpath,
         "matrix_dirpath": args.matrix_dirpath,
+        "prepend_bos": True,
+        "append_eos": True,
         "local_rank": -1
     }
     encoder = Encoder(**encoder_config)
@@ -288,6 +295,12 @@ def load_environment(args):
         truncation_seq_length=model_config.seq_max_length,
         truncation_matrix_length=model_config.matrix_max_length,
         ignore_index=model_config.ignore_index,
+        non_ignore=model_config.non_ignore,
+        padding_idx=0,
+        unk_idx=1,
+        cls_idx=2,
+        eos_idx=3,
+        mask_idx=4,
         prepend_bos=not args.not_prepend_bos,
         append_eos=not args.not_append_eos
     )

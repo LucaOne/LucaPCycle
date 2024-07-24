@@ -39,7 +39,7 @@ def main():
     parser.add_argument("--time_str", default=None, type=str, required=True, help="the running time string(yyyymmddHimiss) of model building.")
     parser.add_argument("--step", default=None, type=str, required=True, help="the training global step of model finalization.")
 
-    parser.add_argument("--threshold",  default=0.5, type=float, help="sigmoid threshold for binary-class or multi-label classification, None for multi-class classification, defualt: 0.5.")
+    parser.add_argument("--threshold",  default=0.5, type=float, help="sigmoid threshold for binary-class or multi-label classification, None for multi-class classification, default: 0.5.")
     args = parser.parse_args()
     return args
 

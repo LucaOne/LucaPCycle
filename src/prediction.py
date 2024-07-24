@@ -222,8 +222,8 @@ def load_tokenizer(args, model_dir, seq_tokenizer_class, struct_tokenizer_class)
                 seq_tokenizer = seq_tokenizer_class.from_pretrained(os.path.join(model_dir, "sequence"), do_lower_case=args.do_lower_case)
             else:
                 seq_tokenizer = seq_tokenizer_class.from_pretrained(os.path.join(model_dir, "tokenizer"), do_lower_case=args.do_lower_case)
-            bpe_codes_prot = codecs.open(args.codes_file)
-            seq_subword = BPE(bpe_codes_prot, merges=-1, separator='')
+            bpe_codes = codecs.open(args.codes_file)
+            seq_subword = BPE(bpe_codes, merges=-1, separator='')
         else:
             seq_subword = None
             seq_tokenizer = seq_tokenizer_class.from_predefined(args.seq_vocab_path)
@@ -288,17 +288,18 @@ def load_model(args, model_name, model_dir):
 
 def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
     encoder = Encoder(llm_type=model_args.llm_type,
+                      llm_version=model_args.llm_version,
+                      llm_step=model_args.llm_step,
                       llm_dirpath=model_args.llm_dirpath,
                       input_type=model_args.input_type,
                       trunc_type=model_args.trunc_type,
                       seq_max_length=model_args.seq_max_length,
-                      prepend_bos=True,
-                      append_eos=True,
                       vector_dirpath=model_args.vector_dirpath,
                       matrix_dirpath=model_args.matrix_dirpath,
-                      llm_truncation_seq_length=model_args.llm_truncation_seq_length,
-                      device=model_args.device,
-                      local_rank=model_args.gpu_id)
+                      prepend_bos=True,
+                      append_eos=True,
+                      local_rank=model_args.gpu_id
+                      )
 
     batch_converter = BatchConverter(task_level_type=model_args.task_level_type,
                                      label_size=model_args.label_size,
@@ -310,12 +311,12 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
                                      truncation_seq_length=model_args.truncation_seq_length,
                                      truncation_matrix_length=model_args.truncation_matrix_length,
                                      ignore_index=model_args.ignore_index,
+                                     non_ignore=model_args.non_ignore,
                                      padding_idx=0,
                                      unk_idx=1,
                                      cls_idx=2,
                                      eos_idx=3,
                                      mask_idx=4,
-                                     non_ignore=model_args.non_ignore,
                                      prepend_bos=not model_args.not_prepend_bos,
                                      append_eos=not model_args.not_append_eos
                                      )
@@ -334,8 +335,14 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
     print(lucapcycle_args.__dict__)
     print("*" * 50)
     lucapcycle_args.llm_truncation_seq_length = llm_truncation_seq_length
+    # 选较大值
     lucapcycle_args.truncation_seq_length = lucapcycle_args.seq_max_length
+    if lucapcycle_args.truncation_seq_length is None or lucapcycle_args.truncation_seq_length < llm_truncation_seq_length:
+        lucapcycle_args.truncation_seq_length = llm_truncation_seq_length
+    # 选较大值
     lucapcycle_args.truncation_matrix_length = lucapcycle_args.matrix_max_length
+    if lucapcycle_args.truncation_matrix_length is None or lucapcycle_args.truncation_matrix_length < llm_truncation_seq_length:
+        lucapcycle_args.truncation_matrix_length = llm_truncation_seq_length
     lucapcycle_args.emb_dir = None
     lucapcycle_args.vector_dirpath = None
     lucapcycle_args.matrix_dirpath = None
@@ -421,7 +428,7 @@ def run_args():
     parser.add_argument("--seq_id", default=None, type=str,  help="the seq id")
     parser.add_argument("--seq", default=None, type=str,  help="the sequence")
     parser.add_argument("--seq_type", default="prot", type=str, choices=["prot"], help="the seq type.")
-    parser.add_argument("--fasta", default=None, type=str, help="the sequence fasta file")
+    parser.add_argument("--input_file", default=None, type=str, help="the input file(fasta or csv format).")
     parser.add_argument("--llm_truncation_seq_length", default=4096, type=int, help="the truncation seq length for LLM, default: 4096")
     parser.add_argument("--topk", default=None, type=int, help="the topk for multi-class, default: None")
     parser.add_argument("--model_path", default="..", type=str, help="the model dir. default: ../")
@@ -443,15 +450,15 @@ def run_args():
     parser.add_argument("--step", default=None, type=str, required=True, help="the global step of trained model..")
     parser.add_argument("--per_num", default=1000, type=int, help="the per num to print. default: 1000")
     parser.add_argument("--gpu_id", default=-1, type=int, help="the used gpu_id. default: -1(CPU)")
-    parser.add_argument("--threshold",  default=0.1, type=float, help="the positive(>=threshold) or negative(<threshold), defualt: 0.1. Small value leads to high recall, and large value to high precision")
+    parser.add_argument("--threshold",  default=0.1, type=float, help="the positive(>=threshold) or negative(<threshold), default: 0.1. Small value leads to high recall, and large value to high precision")
     args = parser.parse_args()
     return args
 
 
 if __name__ == "__main__":
     args = run_args()
-    assert args.seq is not None or (args.fasta is not None and os.path.exists(args.fasta))
-    if args.fasta is not None and os.path.exists(args.fasta):
+    assert args.seq is not None or (args.input_file is not None and os.path.exists(args.input_file))
+    if args.input_file is not None and os.path.exists(args.input_file):
         exists_ids = set()
         exists_res = []
         if os.path.exists(args.save_path):
@@ -476,7 +483,8 @@ if __name__ == "__main__":
             exists_res = []
             batch_data = []
             had_done = 0
-            for row in fasta_reader(args.fasta):
+            file_reader = csv_reader if args.input_file.endswith(".csv") else fasta_reader
+            for row in file_reader(args.input_file):
                 if row[0] in exists_ids:
                     continue
                 batch_data.append([row[0], "prot", row[1]])
