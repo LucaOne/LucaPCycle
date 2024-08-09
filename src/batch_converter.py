@@ -77,6 +77,12 @@ class BatchConverter(object):
         self.cls_idx = cls_idx
         self.eos_idx = eos_idx
         self.mask_idx = mask_idx
+
+        print("BatchConverter Special Token Idx:")
+        print("padding_idx=%d, unk_idx=%d, cls_idx=%d, eos_idx=%d, mask_idx=%d" % (
+            self.padding_idx, self.unk_idx, self.cls_idx, self.eos_idx, self.mask_idx
+        ))
+
         if self.seq_tokenizer is None:
             self.append_len = 0
         else:
@@ -108,6 +114,12 @@ class BatchConverter(object):
             else:
                 self.all_special_token_idx_list = [self.padding_idx, self.unk_idx, self.cls_idx, self.eos_idx, self.mask_idx]
             self.append_len = int(self.prepend_bos) + int(self.append_eos)
+
+        print("BatchConverter Special Token Idx:")
+        print("padding_idx=%d, unk_idx=%d, cls_idx=%d, eos_idx=%d, mask_idx=%d" % (
+            self.padding_idx, self.unk_idx, self.cls_idx, self.eos_idx, self.mask_idx
+        ))
+
         # 减去特殊字符之后的长度
         self.truncation_seq_length -= self.append_len
         self.truncation_matrix_length -= self.append_len
