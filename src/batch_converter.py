@@ -80,30 +80,30 @@ class BatchConverter(object):
         if self.seq_tokenizer is None:
             self.append_len = 0
         else:
-            if hasattr(seq_tokenizer, "prepend_bos") \
+            if hasattr(self.seq_tokenizer, "prepend_bos") \
                     and self.seq_tokenizer.prepend_bos is not None:
                 self.seq_prepend_bos = self.seq_tokenizer.prepend_bos
-            if hasattr(seq_tokenizer, "append_eos") \
+            if hasattr(self.seq_tokenizer, "append_eos") \
                     and self.seq_tokenizer.append_eos is not None:
                 self.seq_append_eos = self.seq_tokenizer.append_eos
 
-            if hasattr(seq_tokenizer, "padding_idx") \
+            if hasattr(self.seq_tokenizer, "padding_idx") \
                     and self.seq_tokenizer.padding_idx is not None:
                 self.padding_idx = self.seq_tokenizer.padding_idx
-            if hasattr(seq_tokenizer, "unk_idx") \
+            if hasattr(self.seq_tokenizer, "unk_idx") \
                     and self.seq_tokenizer.unk_idx is not None:
                 self.unk_idx = self.seq_tokenizer.unk_idx
-            if hasattr(seq_tokenizer, "cls_idx") \
+            if hasattr(self.seq_tokenizer, "cls_idx") \
                     and self.seq_tokenizer.cls_idx is not None:
                 self.cls_idx = self.seq_tokenizer.cls_idx
-            if hasattr(seq_tokenizer, "eos_idx") \
+            if hasattr(self.seq_tokenizer, "eos_idx") \
                     and self.seq_tokenizer.eos_idx is not None:
                 self.eos_idx = self.seq_tokenizer.eos_idx
-            if hasattr(seq_tokenizer, "mask_idx") \
+            if hasattr(self.seq_tokenizer, "mask_idx") \
                     and self.seq_tokenizer.mask_idx is not None:
                 self.mask_idx = self.seq_tokenizer.mask_idx
 
-            if hasattr(seq_tokenizer, "all_special_token_idx_list"):
+            if hasattr(self.seq_tokenizer, "all_special_token_idx_list"):
                 self.all_special_token_idx_list = self.seq_tokenizer.all_special_token_idx_list
             else:
                 self.all_special_token_idx_list = [self.padding_idx, self.unk_idx, self.cls_idx, self.eos_idx, self.mask_idx]
