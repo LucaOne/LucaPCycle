@@ -25,14 +25,14 @@ sys.path.append("../../")
 sys.path.append("../../../")
 sys.path.append("../../../src")
 try:
-    from file_operator import fasta_reader
-    from utils import clean_seq, available_gpu_id
+    from file_operator import fasta_reader, csv_reader
+    from utils import clean_seq, available_gpu_id, calc_emb_filename_by_seq_id
     from biotoolbox.structure_file_reader import *
     from biotoolbox.contact_map_builder import *
     from biotoolbox.contact_map_generator import *
 except ImportError:
-    from src.file_operator import fasta_reader
-    from src.utils import clean_seq, available_gpu_id
+    from src.file_operator import fasta_reader, csv_reader
+    from src.utils import clean_seq, available_gpu_id, calc_emb_filename_by_seq_id
     from src.biotoolbox.structure_file_reader import *
     from src.biotoolbox.contact_map_builder import *
     from src.biotoolbox.contact_map_generator import *
@@ -147,7 +147,7 @@ def calc_distance_maps(pdb_filepath, chain, sequence):
         return ca.chains, cb.chains
 
 
-global_model, global_alphabet, global_version = None, None, None
+global_model, global_alphabet, global_version, global_layer_size = None, None, None, None
 
 
 def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], truncation_seq_length=4094, device=None, version="3B", matrix_add_special_token=False):
@@ -160,7 +160,7 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
     :param truncation_seq_length: [4094,2046,1982,1790,1534,1278,1150,1022]
     :return: embedding, processed_seq_len
     '''
-    global global_model, global_alphabet, global_version
+    global global_model, global_alphabet, global_version, global_layer_size
     assert "bos" in embedding_type or "representations" in embedding_type \
            or "matrix" in embedding_type or "vector" in embedding_type or "contacts" in embedding_type
     if len(sample) > 2:
@@ -173,15 +173,26 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
             protein_seq = protein_seq[-truncation_seq_length:]
         else:
             protein_seq = protein_seq[:truncation_seq_length]
-    if global_model is None or global_alphabet is None or global_version is None or global_version != version:
-        if version == "3B":
+    if global_model is None or global_alphabet is None or global_version is None or global_version != version or global_layer_size is None:
+        if version == "15B":
+            llm_name = "esm2_t48_15B_UR50D"
+            global_layer_size = 48
+            global_model, global_alphabet = pretrained.load_model_and_alphabet("esm2_t48_15B_UR50D")
+        elif version == "3B":
+            llm_name = "esm2_t36_3B_UR50D"
+            global_layer_size = 36
             global_model, global_alphabet = pretrained.load_model_and_alphabet("esm2_t36_3B_UR50D")
         elif version == "650M":
+            llm_name = "esm2_t33_650M_UR50D"
+            global_layer_size = 33
             global_model, global_alphabet = pretrained.load_model_and_alphabet("esm2_t33_650M_UR50D")
         elif version == "150M":
+            llm_name = "esm2_t30_150M_UR50D"
+            global_layer_size = 30
             global_model, global_alphabet = pretrained.load_model_and_alphabet("esm2_t30_150M_UR50D")
         else:
             raise Exception("not support this version=%s" % version)
+        print("LLM: %s, version: %s, layer_idx: %d, device: %s" % (llm_name, version, global_layer_size, str(device)))
         global_version = version
     if torch.cuda.is_available() and device is not None:
         global_model = global_model.to(device)
@@ -207,15 +218,15 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
             truncate_len = min(truncation_seq_length, len(raw_seqs[0]))
             if "representations" in embedding_type or "matrix" in embedding_type:
                 if matrix_add_special_token:
-                    embedding = out["representations"][36].to(device="cpu")[0, 1: truncate_len + 1].clone().numpy()
+                    embedding = out["representations"][global_layer_size].to(device="cpu")[0, 1: truncate_len + 1].clone().numpy()
                 else:
-                    embedding = out["representations"][36].to(device="cpu")[0, 1: truncate_len + 1].clone().numpy()
+                    embedding = out["representations"][global_layer_size].to(device="cpu")[0, 1: truncate_len + 1].clone().numpy()
                 embeddings["representations"] = embedding
             if "bos" in embedding_type or "vector" in embedding_type:
-                embedding = out["representations"][36].to(device="cpu")[0, 0].clone().numpy()
+                embedding = out["representations"][global_layer_size].to(device="cpu")[0, 0].clone().numpy()
                 embeddings["bos_representations"] = embedding
             if "contacts" in embedding_type:
-                embedding = out["contacts"][36].to(device="cpu")[0, :, :].clone().numpy()
+                embedding = out["contacts"][global_layer_size].to(device="cpu")[0, :, :].clone().numpy()
                 embeddings["contacts"] = embedding
             if len(embeddings) > 1:
                 return embeddings, protein_seq
@@ -232,26 +243,26 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description='ESM/SRM Embedding')
+    parser = argparse.ArgumentParser(description='ESM/ESM2 Embedding')
     # for logging
-    parser.add_argument("--llm_type", type=str, default="lucaone_gplm", choices=["esm", "ESM", "lucaone_gplm"],  help="llm type")
+    parser.add_argument("--llm_type", type=str, default="esm", choices=["esm"],  help="llm type")
     parser.add_argument("--llm_version", type=str, default="3B", choices=["15B", "3B", "650M", "150M"], help="llm version")
     parser.add_argument("--embedding_type", type=str, default="matrix", choices=["matrix", "vector", "contact"], help="llm embedding type.")
     parser.add_argument("--trunc_type", type=str, default="right", choices=["left", "right"], help="llm trunc type of seq.")
     parser.add_argument("--truncation_seq_length", type=int, default=4094, help="truncation seq length.")
-    parser.add_argument('--gpu', type=int, default=-1, help="gpu idx.")
-    parser.add_argument("--fasta", type=str, default=None, help="fasta filepath")
+    parser.add_argument('--gpu_id', type=int, default=-1, help="gpu idx(-1 for CPU).")
+    parser.add_argument("--input_file", type=str, default=None, help="the input filepath(format: fasta or csv)")
     parser.add_argument("--seq", type=str, default=None, help="the input seq")
     parser.add_argument("--seq_type", type=str, default=None, required=True, choices=["gene", "prot"], help="seq type")
     parser.add_argument("--save_path", type=str, default=None, help="embedding file save path")
     parser.add_argument("--matrix_add_special_token", action="store_true", help="Whether to add special token embedding in seq representation matrix")
-    args = parser.parse_args()
-    return args
+    input_args = parser.parse_args()
+    return input_args
 
 
 def main(args):
-    if args.gpu >= 0:
-        gpu_id = args.gpu
+    if args.gpu_id >= 0:
+        gpu_id = args.gpu_id
     else:
         gpu_id = available_gpu_id()
         print("gpu_id: ", gpu_id)
@@ -260,7 +271,7 @@ def main(args):
     else:
         args.device = torch.device("cuda:%d" % gpu_id if gpu_id > -1 else "cpu")
     # model.to(args.device)
-    assert args.fasta is not None or args.seq is not None
+    assert args.input_file is not None or args.seq is not None
     print("input seq type: %s" % args.seq_type)
     print("args device: %s" % args.device)
     embedding_type = args.embedding_type
@@ -273,14 +284,20 @@ def main(args):
     if not os.path.exists(emb_save_path):
         os.makedirs(emb_save_path)
 
-    if args.fasta:
+    if args.input_file:
         done = 0
-        for row in fasta_reader(args.fasta):
-            seq_id, seq = row[0].strip(), row[1].upper()
-            if " " in seq_id or "/" in seq_id:
-                emb_filename = seq_id.replace(" ", "").replace("/", "_") + ".pt"
+        file_reader = fasta_reader
+        if args.input_file.endswith(".csv"):
+            file_reader = csv_reader
+        for row in file_reader(args.input_file):
+            if args.id_idx is None or args.seq_idx is None:
+                if len(row) > 2:
+                    seq_id, seq = row[0].strip(), row[2].upper()
+                else:
+                    seq_id, seq = row[0].strip(), row[1].upper()
             else:
-                emb_filename = seq_id + ".pt"
+                seq_id, seq = row[args.id_idx].strip(), row[args.seq_idx].upper()
+            emb_filename = calc_emb_filename_by_seq_id(seq_id=seq_id, embedding_type=embedding_type)
             embedding_filepath = os.path.join(emb_save_path, emb_filename)
             emb, processed_seq_len = predict_embedding([seq_id, seq_type, seq],
                                                        args.trunc_type,
