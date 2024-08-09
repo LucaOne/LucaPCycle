@@ -250,7 +250,7 @@ def get_args():
     parser.add_argument("--embedding_type", type=str, default="matrix", choices=["matrix", "vector", "contact"], help="llm embedding type.")
     parser.add_argument("--trunc_type", type=str, default="right", choices=["left", "right"], help="llm trunc type of seq.")
     parser.add_argument("--truncation_seq_length", type=int, default=4094, help="truncation seq length.")
-    parser.add_argument('--gpu_id', type=int, default=-1, help="gpu idx.")
+    parser.add_argument('--gpu_id', type=int, default=-1, help="gpu idx(-1 for CPU).")
     parser.add_argument("--input_file", type=str, default=None, help="the input filepath(format: fasta or csv)")
     parser.add_argument("--seq", type=str, default=None, help="the input seq")
     parser.add_argument("--seq_type", type=str, default=None, required=True, choices=["gene", "prot"], help="seq type")
