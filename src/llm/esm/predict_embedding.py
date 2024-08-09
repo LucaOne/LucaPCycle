@@ -243,9 +243,9 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
 
 
 def get_args():
-    parser = argparse.ArgumentParser(description='ESM/SRM Embedding')
+    parser = argparse.ArgumentParser(description='ESM/ESM2 Embedding')
     # for logging
-    parser.add_argument("--llm_type", type=str, default="lucaone_gplm", choices=["esm", "ESM", "lucaone_gplm"],  help="llm type")
+    parser.add_argument("--llm_type", type=str, default="esm", choices=["esm"],  help="llm type")
     parser.add_argument("--llm_version", type=str, default="3B", choices=["15B", "3B", "650M", "150M"], help="llm version")
     parser.add_argument("--embedding_type", type=str, default="matrix", choices=["matrix", "vector", "contact"], help="llm embedding type.")
     parser.add_argument("--trunc_type", type=str, default="right", choices=["left", "right"], help="llm trunc type of seq.")
