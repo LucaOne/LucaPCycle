@@ -27,6 +27,7 @@ sys.path.append("../src")
 try:
     from utils import to_device
     from common.multi_label_metrics import relevant_indexes
+    from common.alphabet import Alphabet
     from encoder import Encoder
     from batch_converter import BatchConverter
     from lucaprot.models.lucaprot import LucaProt
@@ -35,6 +36,7 @@ try:
 except ImportError:
     from src.utils import to_device
     from src.common.multi_label_metrics import relevant_indexes
+    from src.common.alphabet import Alphabet
     from src.encoder import Encoder
     from src.batch_converter import BatchConverter
     from src.lucaprot.models.lucaprot import LucaProt
@@ -273,7 +275,10 @@ def load_model(args, model_name, model_dir):
     device = torch.device(args.device)
     print("load model on cuda:", device)
     if model_name.lower() == "lucaprot":
-        config_class, seq_tokenizer_class, struct_tokenizer_class, model_class = BertConfig, BertTokenizer, BertTokenizer, LucaProt
+        if args.seq_subword:
+            config_class, seq_tokenizer_class, struct_tokenizer_class, model_class = BertConfig, BertTokenizer, BertTokenizer, LucaProt
+        else:
+            config_class, seq_tokenizer_class, struct_tokenizer_class, model_class = BertConfig, Alphabet, Alphabet, LucaProt
     else:
         raise Exception("Not support model_name=%s" % model_name)
     seq_subword, seq_tokenizer, struct_tokenizer = load_tokenizer(args, model_dir, seq_tokenizer_class, struct_tokenizer_class)
@@ -427,7 +432,7 @@ def run_args():
     parser = argparse.ArgumentParser(description="Prediction")
     parser.add_argument("--seq_id", default=None, type=str,  help="the seq id")
     parser.add_argument("--seq", default=None, type=str,  help="the sequence")
-    parser.add_argument("--seq_type", default="prot", type=str, choices=["prot"], help="the seq type.")
+    parser.add_argument("--seq_type", default=None, type=str, required=True, choices=["gene", "prot"], help="the input seq type.")
     parser.add_argument("--input_file", default=None, type=str, help="the input file(fasta or csv format).")
     parser.add_argument("--llm_truncation_seq_length", default=4096, type=int, help="the truncation seq length for LLM, default: 4096")
     parser.add_argument("--topk", default=None, type=int, help="the topk for multi-class, default: None")
@@ -487,7 +492,7 @@ if __name__ == "__main__":
             for row in file_reader(args.input_file):
                 if row[0] in exists_ids:
                     continue
-                batch_data.append([row[0], "prot", row[1]])
+                batch_data.append([row[0], args.seq_type, row[1]])
                 if len(batch_data) % args.per_num == 0:
                     batch_results = run(
                         batch_data,
