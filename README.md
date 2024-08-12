@@ -63,6 +63,7 @@ The inference script: **`src/prediction.py`** or  **`src/prediction.sh`**
 cd src/
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
 python prediction.py \
+    --seq_type prot \
     --input_file ../test_data/examples.fasta \
     --llm_truncation_seq_length 4096 \
     --model_path .. \
@@ -86,6 +87,7 @@ Then, for the sequences predicted to be positive in the **2-classification** inf
 cd src/
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
 python prediction.py \
+    --seq_type prot \
     --input_file ../test_data/example_positives.fasta \
     --llm_truncation_seq_length 4096 \
     --model_path .. \
@@ -104,6 +106,7 @@ python prediction.py \
 
 #### Parameters   
 1) Input data parameters:     
+* seq_type: `str`, the input seq type(`gene` or `prot`)    
 * input_file: `Path`, the input filepath(for a batch samples, format: `fasta` or `csv`(contain header, columns: `seq_id`, `seq`))   
 * seq_id: `str`, the seq id(for one sample)     
 * seq: `str`, the sequence(for one sample)      
