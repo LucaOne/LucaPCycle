@@ -73,7 +73,7 @@ class Encoder(object):
             if vector_filename is None:
                 if seq is None:
                     raise Exception("seq is none and vector_filename is none")
-                elif seq_type not in ["protein", "prot"]:
+                elif seq_type not in ["protein", "prot", "gene"]:
                     raise Exception("now not support embedding of the seq_type=%s" % seq_type)
                 else:
                     vector = self.__get_embedding__(seq_id, seq_type, seq, "vector")
@@ -90,7 +90,7 @@ class Encoder(object):
             if matrix_filename is None:
                 if seq is None:
                     raise Exception("seq is none and matrix_filename is none")
-                elif seq_type not in ["protein", "prot"]:
+                elif seq_type not in ["protein", "prot", "gene"]:
                     raise Exception("now not support embedding of the seq_type=%s" % seq_type)
                 else:
                     matrix = self.__get_embedding__(seq_id, seq_type, seq, "matrix")
@@ -113,7 +113,7 @@ class Encoder(object):
 
     def __get_embedding__(self, seq_id, seq_type, seq, embedding_type):
         seq_type = seq_type.strip().lower()
-        if "prot" not in seq_type:
+        if "prot" not in seq_type and "gene" not in seq_type:
             raise Exception("Not support this seq_type=%s" % seq_type)
         embedding_info = None
         if seq_id in self.seq_id_2_emb_filename:
@@ -178,7 +178,7 @@ class Encoder(object):
             if vector_filename_a is None:
                 if seq_a is None:
                     raise Exception("seq_a is none and vector_filename_a is none")
-                elif seq_type_a not in ["prot", "protein"]:
+                elif seq_type_a not in ["prot", "protein", "gene"]:
                     raise Exception("now not support embedding of the seq_type_a=%s" % seq_type_a)
                 else:
                     vector_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "vector")
@@ -191,7 +191,7 @@ class Encoder(object):
             if vector_filename_b is None:
                 if seq_b is None:
                     raise Exception("seq_b is none and vector_filename_b is none")
-                elif seq_type_b not in ["prot", "protein"]:
+                elif seq_type_b not in ["prot", "protein", "gene"]:
                     raise Exception("now not support embedding of the seq_type_b=%s" % seq_type_b)
                 else:
                     vector_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "vector")
@@ -208,7 +208,7 @@ class Encoder(object):
             if matrix_filename_a is None:
                 if seq_a is None:
                     raise Exception("seq_a is none and matrix_filename_a is none")
-                elif seq_type_a not in ["prot", "protein"]:
+                elif seq_type_a not in ["prot", "protein", "gene"]:
                     raise Exception("now not support embedding of the seq_type_a=%s" % seq_type_a)
                 else:
                     matrix_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "matrix")
@@ -221,7 +221,7 @@ class Encoder(object):
             if matrix_filename_b is None:
                 if seq_b is None:
                     raise Exception("seq_b is none and matrix_filename_b is none")
-                elif seq_type_b not in ["prot", "protein"]:
+                elif seq_type_b not in ["prot", "protein", "gene"]:
                     raise Exception("now not support embedding of the seq_type_b=%s" % seq_type_b)
                 else:
                     matrix_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "matrix")
