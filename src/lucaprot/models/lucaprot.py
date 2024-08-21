@@ -288,13 +288,13 @@ class LucaProt(BertPreTrainedModel):
             if self.loss_type == "bce":
                 if self.pos_weight:
                     # [1, 1, 1, ,1, 1...] length: num_labels
-                    if isinstance(self.pos_weight, str):
+                    if isinstance(self.pos_weight, str) or isinstance(self.pos_weight, int):
                         self.pos_weight = [float(self.pos_weight)] * self.num_labels
-                    if isinstance(self.pos_weight, float):
+                    elif isinstance(self.pos_weight, float):
                         self.pos_weight = [self.pos_weight] * self.num_labels
-                    pos_weight = torch.tensor(self.pos_weight, dtype=torch.float32).to(args.device)
-                    print("pos_weight:")
-                    print(pos_weight)
+                    self.pos_weight = torch.tensor(self.pos_weight, dtype=torch.float32).to(args.device)
+                    print("multi_label pos_weight:")
+                    print(self.pos_weight)
                     assert self.pos_weight.ndim == 1 and self.pos_weight.shape[0] == self.num_labels
                     self.loss_fct = BCEWithLogitsLoss(pos_weight=self.pos_weight)
                 else:
@@ -318,11 +318,11 @@ class LucaProt(BertPreTrainedModel):
             if self.loss_type == "bce":
                 if self.pos_weight:
                     # [0.9]
-                    if isinstance(self.pos_weight, int):
-                        self.pos_weight = torch.tensor([self.pos_weight], dtype=torch.long).to(args.device)
+                    if isinstance(self.pos_weight, str) or isinstance(self.pos_weight, int):
+                        self.pos_weight = torch.tensor([float(self.pos_weight)], dtype=torch.float32).to(args.device)
                     elif isinstance(self.pos_weight, float):
                         self.pos_weight = torch.tensor([self.pos_weight], dtype=torch.float32).to(args.device)
-                    print("pos_weight:")
+                    print("binary_class pos_weight:")
                     print(self.pos_weight)
                     assert self.pos_weight.ndim == 1 and self.pos_weight.shape[0] == 1
                     self.loss_fct = BCEWithLogitsLoss(pos_weight=self.pos_weight)
@@ -337,7 +337,7 @@ class LucaProt(BertPreTrainedModel):
             if self.weight:
                 # [1, 1, 1, ,1, 1...] length: self.num_labels
                 weight = torch.tensor(self.weight, dtype=torch.float32).to(args.device)
-                print("weight:")
+                print("multi_class weight:")
                 print(weight)
                 assert weight.ndim == 1 and weight.shape[0] == self.num_labels
                 self.loss_fct = CrossEntropyLoss(weight=weight)
