@@ -278,7 +278,8 @@ def load_environment(args):
         "matrix_dirpath": args.matrix_dirpath,
         "prepend_bos": True,
         "append_eos": True,
-        "local_rank": -1
+        "local_rank": -1,
+        "use_cpu": False
     }
     encoder = Encoder(**encoder_config)
 

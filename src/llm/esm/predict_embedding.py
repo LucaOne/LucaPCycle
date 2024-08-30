@@ -158,6 +158,9 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
     :param embedding_type: bos or representations
     :param repr_layers: [-1]
     :param truncation_seq_length: [4094,2046,1982,1790,1534,1278,1150,1022]
+    :param device:
+    :param version:
+    :param matrix_add_special_token:
     :return: embedding, processed_seq_len
     '''
     global global_model, global_alphabet, global_version, global_layer_size
@@ -194,6 +197,7 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
             raise Exception("not support this version=%s" % version)
         print("LLM: %s, version: %s, layer_idx: %d, device: %s" % (llm_name, version, global_layer_size, str(device)))
         global_version = version
+    '''
     if torch.cuda.is_available() and device is not None:
         global_model = global_model.to(device)
     elif torch.cuda.is_available():
@@ -202,6 +206,13 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
     else:
         device = torch.device("cpu")
         print("llm use cpu")
+    '''
+    if device is None:
+        device = next(global_model.parameters()).device
+    else:
+        model_device = next(global_model.parameters()).device
+        if device != model_device:
+            global_model = global_model.to(device)
     # print("llm device:", device)
     assert all(-(global_model.num_layers + 1) <= i <= global_model.num_layers for i in repr_layers)
     repr_layers = [(i + global_model.num_layers + 1) % (global_model.num_layers + 1) for i in repr_layers]
@@ -211,8 +222,8 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
     protein_ids, raw_seqs, tokens = converter([[protein_id, protein_seq]])
     embeddings = {}
     with torch.no_grad():
-        if torch.cuda.is_available():
-            tokens = tokens.to(device=device, non_blocking=True)
+        # if torch.cuda.is_available():
+        tokens = tokens.to(device=device, non_blocking=True)
         try:
             out = global_model(tokens, repr_layers=repr_layers, return_contacts=False)
             truncate_len = min(truncation_seq_length, len(raw_seqs[0]))
