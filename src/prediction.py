@@ -303,7 +303,8 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
                       matrix_dirpath=model_args.matrix_dirpath,
                       prepend_bos=True,
                       append_eos=True,
-                      local_rank=model_args.gpu_id
+                      local_rank=model_args.gpu_id,
+                      use_cpu=True if model_args.gpu_id < 0 else False
                       )
 
     batch_converter = BatchConverter(task_level_type=model_args.task_level_type,
