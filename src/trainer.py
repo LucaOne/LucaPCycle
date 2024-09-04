@@ -55,8 +55,9 @@ def train(args, train_dataloader, model_config, model, seq_tokenizer, parse_row_
     train_sample_num = sample_size(args.train_data_dir)
     args.train_batch_size = args.per_gpu_train_batch_size * max(1, args.n_gpu)
     train_batch_total_num = (train_sample_num + args.train_batch_size - 1) // args.train_batch_size
-    print("Train dataset len: %d, batch num: %d" % (train_sample_num, train_batch_total_num))
-    log_fp.write("Train dataset len: %d, batch num: %d\n" % (train_sample_num, train_batch_total_num))
+    if args.local_rank in [-1, 0]:
+        print("Train dataset len: %d, batch num: %d" % (train_sample_num, train_batch_total_num))
+        log_fp.write("Train dataset len: %d, batch num: %d\n" % (train_sample_num, train_batch_total_num))
 
     if args.logging_steps <= 0:
         args.logging_steps = (train_batch_total_num + args.gradient_accumulation_steps - 1) // args.gradient_accumulation_steps
