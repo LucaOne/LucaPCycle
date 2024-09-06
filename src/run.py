@@ -17,7 +17,7 @@ import logging
 import codecs
 import argparse
 import shutil
-import datetime
+from datetime import timedelta
 from datasets import load_dataset
 import torch.distributed as dist
 from subword_nmt.apply_bpe import BPE
@@ -485,6 +485,7 @@ def get_model(args):
         model_config.pos_weight = args.pos_weight
     if args.weight:
         model_config.weight = [float(v) for v in args.weight.split(",")]
+        args.weight = model_config.weight
     if args.loss_reduction:
         if args.loss_reduction in ["meanmean", "meansum"] \
                 and args.task_level_type in ["seq_level"] \
@@ -541,7 +542,7 @@ def create_device(args):
         if args.n_gpu > 1:
             torch.cuda.set_device(args.local_rank)
             device = torch.device("cuda", args.local_rank)
-            dist.init_process_group(backend="nccl", timeout=datetime.timedelta(seconds=54000))
+            dist.init_process_group(backend="nccl", timeout=timedelta(seconds=54000))
             if args.local_rank == 0:
                 print('world size: %d' % dist.get_world_size())
         else:
