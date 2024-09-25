@@ -425,7 +425,7 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
                                    lucabase_model,
                                    row)
             results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
-    torch.cuda.empty_cache()
+    # torch.cuda.empty_cache()
     return results
 
 
@@ -514,7 +514,7 @@ if __name__ == "__main__":
                     for item in batch_results:
                         writer.writerow(item)
                     had_done += len(batch_data)
-                    print("done %d, had_done: %d" % (len(batch_data), had_done))
+                    print("done: %d, had_done: %d" % (len(batch_data), had_done))
                     batch_data = []
             if len(batch_data) > 0:
                 batch_results = run(
@@ -537,27 +537,29 @@ if __name__ == "__main__":
                     writer.writerow(item)
                 had_done += len(batch_data)
                 batch_data = []
-            print("over %d" % had_done)
+            print("over, done: %d" % had_done)
 
     elif args.seq is not None:
         if args.seq_id is None:
             args.seq_id = "unknown_id"
         data = [[args.seq_id, args.seq_type, args.seq]]
-        results = run(data,
-                      args.llm_truncation_seq_length,
-                      args.model_path,
-                      args.dataset_name,
-                      args.dataset_type,
-                      args.task_type,
-                      args.task_level_type,
-                      args.model_type,
-                      args.input_type,
-                      args.time_str,
-                      args.step,
-                      args.gpu_id,
-                      args.threshold,
-                      topk=args.topk)
-        print("Predicted result:")
+        results = run(
+            data,
+            args.llm_truncation_seq_length,
+            args.model_path,
+            args.dataset_name,
+            args.dataset_type,
+            args.task_type,
+            args.task_level_type,
+            args.model_type,
+            args.input_type,
+            args.time_str,
+            args.step,
+            args.gpu_id,
+            args.threshold,
+            topk=args.topk
+        )
+        print("Predicted Result:")
         print("seq_id=%s" % args.seq_id)
         print("seq=%s" % args.seq)
         print("prob=%f" % results[0][2])
