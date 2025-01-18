@@ -14,7 +14,8 @@ import sys, os, random
 sys.path.append("")
 sys.path.append("..")
 sys.path.append("../..")
-sys.path.append("../../src")
+sys.path.append("../../..")
+sys.path.append("../../../src")
 try:
     from file_operator import csv_reader, csv_writer, fasta_reader
     from utils import load_labels, save_labels
@@ -98,11 +99,11 @@ def generate_dataset_multi_class(dirpath, save_path, train_rate=0.9):
 
 
 if __name__ == "__main__":
-    save_path = "../../dataset/extra_p_31_class_v2/protein/multi_class/"
+    save_path = "../../../dataset/extra_p_31_class_v2/protein/multi_class/"
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     generate_dataset_multi_class(
-        dirpath="../../data/31P_genes/",
+        dirpath="../../../data/31P_genes/",
         save_path=save_path,
         train_rate=0.9
     )
