@@ -217,7 +217,10 @@ Representatives from non-singleton P-solubilizing protein families.
 <a href="https://scholar.google.com/citations?user=a1Evzq4AAAAJ&hl=en" title="Chuwen Zhang">Chuwen Zhang</a>, 
 <a href="https://scholar.google.com/citations?hl=zh-CN&user=7c3wH8sAAAAJ&hl=en" title="Xiyang Dong">Xiyang Dong</a>      
 
-## 8. Citation    
+## 8. Citation
+**<a href='https://www.biorxiv.org/content/early/2024/07/09/2024.07.09.602434'>LucaPCycle Biorxiv</a>**
+
+
 @article {   
 Zhang2024.07.09.602434,  
 author = {Zhang, Chuwen and He, Yong and Wang, Jieni and Chen, Tengkai and Baltar, Federico and Hu, Minjie and Liao, Jing and Xiao, Xi and Li, Zhao-Rong and Dong, Xiyang},      
@@ -226,8 +229,8 @@ elocation-id = {2024.07.09.602434},
 year = {2024},       
 doi = {10.1101/2024.07.09.602434},        
 publisher = {Cold Spring Harbor Laboratory},     
-URL = {https://www.biorxiv.org/content/early/2024/07/09/2024.07.09.602434},      
-eprint = {https://www.biorxiv.org/content/early/2024/07/09/2024.07.09.602434.full.pdf},       
+URL = {https://www.biorxiv.org/content/early/2024/07/09/2024.07.09.602434 },      
+eprint = {https://www.biorxiv.org/content/early/2024/07/09/2024.07.09.602434.full.pdf },       
 journal = {bioRxiv}        
 }   
 

@@ -359,6 +359,7 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
     lucapcycle_args.time_str = time_str
     lucapcycle_args.step = step
     lucapcycle_args.task_level_type = task_level_type
+    
     lucapcycle_args.gpu_id = gpu_id
 
     if lucapcycle_args.not_prepend_bos is None and model_type in ["lucaprot"]:
@@ -374,8 +375,9 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
     if not os.path.exists(lucapcycle_args.label_filepath):
         lucapcycle_args.label_filepath = os.path.join(config_dir, "label.txt")
 
-    if gpu_id is None:
-        gpu_id = available_gpu_id()
+    if gpu_id is None or gpu_id < 0:
+        # gpu_id = available_gpu_id()
+        gpu_id = -1
         lucapcycle_args.gpu_id = gpu_id
     print("gpu_id: %d" % gpu_id)
     print("*" * 50)

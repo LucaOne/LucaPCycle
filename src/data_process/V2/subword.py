@@ -21,7 +21,8 @@ from subword_nmt.learn_bpe import learn_bpe
 sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../../")
-sys.path.append("../../src")
+sys.path.append("../../..")
+sys.path.append("../../../src")
 try:
     from file_operator import fasta_reader, csv_reader, txt_reader, txt_writer
 except ImportError as e:
@@ -186,36 +187,36 @@ if __name__ == "__main__":
     min frequency: 115
     python subword.py \
         --func corpus \
-        --infile ../../data/extra_p_50/cold_spring_sample_50.csv \
-        --outfile ../../subword/extra_p_50/all_sequence_extra_p_50.txt
+        --infile ../../../data/extra_p_50/cold_spring_sample_50.csv \
+        --outfile ../../../subword/extra_p_50/all_sequence_extra_p_50.txt
         
     python subword.py \
         --func learn_bpe \
         --num_symbols 20000 \
-        --infile ../../subword/extra_p_50/all_sequence_extra_p_50.txt \
-        --outfile ../../subword/extra_p_50/extra_p_50_codes_20000.txt \
+        --infile ../../../subword/extra_p_50/all_sequence_extra_p_50.txt \
+        --outfile ../../../subword/extra_p_50/extra_p_50_codes_20000.txt \
         --verbose
     
     python subword.py  \
         --func tokenize  \
         --seq IPKIDNPEFASQYRPISCCNIFYKCISKMFCSRLKAVVLHLVAENQAAFVQGSQARGGAMDRITTTTRKFE \
-        --codes_file ../../subword/extra_p_50/extra_p_50_codes_20000.txt 
+        --codes_file ../../../subword/extra_p_50/extra_p_50_codes_20000.txt 
     
     python subword.py  \
         --func apply_bpe  \
-        --infile ../../subword/extra_p_50/all_sequence_extra_p_50.txt  \
-        --codes_file ../../subword/extra_p_50/extra_p_50_codes_20000.txt \
-        --outfile ../../subword/extra_p_50/all_sequence_token_20000.txt
+        --infile ../../../subword/extra_p_50/all_sequence_extra_p_50.txt  \
+        --codes_file ../../../subword/extra_p_50/extra_p_50_codes_20000.txt \
+        --outfile ../../../subword/extra_p_50/all_sequence_token_20000.txt
     
     python subword.py  \
         --func get_vocab  \
-        --infile ../../subword/extra_p_50/all_sequence_token_20000.txt  \
-        --outfile ../../subword/extra_p_50/extra_p_50_subword_vocab_20000_ori.txt
+        --infile ../../../subword/extra_p_50/all_sequence_token_20000.txt  \
+        --outfile ../../../subword/extra_p_50/extra_p_50_subword_vocab_20000_ori.txt
     
     python subword.py  \
         --func subword_vocab_2_token_vocab  \
-        --infile ../../subword/extra_p_50/extra_p_50_subword_vocab_20000_ori.txt  \
-        --outfile ../../vocab/extra_p_50/extra_p_50_subword_vocab_20000.txt
+        --infile ../../../subword/extra_p_50/extra_p_50_subword_vocab_20000_ori.txt  \
+        --outfile ../../../vocab/extra_p_50/extra_p_50_subword_vocab_20000.txt
         
           
     '''

@@ -229,7 +229,7 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
             truncate_len = min(truncation_seq_length, len(raw_seqs[0]))
             if "representations" in embedding_type or "matrix" in embedding_type:
                 if matrix_add_special_token:
-                    embedding = out["representations"][global_layer_size].to(device="cpu")[0, 1: truncate_len + 1].clone().numpy()
+                    embedding = out["representations"][global_layer_size].to(device="cpu")[0, 0: truncate_len + 2].clone().numpy()
                 else:
                     embedding = out["representations"][global_layer_size].to(device="cpu")[0, 1: truncate_len + 1].clone().numpy()
                 embeddings["representations"] = embedding
