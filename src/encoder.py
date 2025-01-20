@@ -1,0 +1,595 @@
+#!/usr/bin/env python
+# encoding: utf-8
+'''
+@license: (C) Copyright 2021, Hey.
+@author: Hey
+@email: sanyuan.hy@alibaba-inc.com
+@tel: 137****6540
+@datetime: 2023/4/21 16:10
+@project: LucaPCycle
+@file: encoder
+@desc: encoder
+'''
+import os
+import torch
+import sys
+import numpy as np
+sys.path.append(".")
+sys.path.append("..")
+sys.path.append("../src")
+try:
+    from llm.esm.predict_embedding import predict_embedding as predict_embedding_esm
+    from utils import calc_emb_filename_by_seq_id
+except ImportError as e:
+    from src.llm.esm.predict_embedding import predict_embedding as predict_embedding_esm
+    from src.utils import calc_emb_filename_by_seq_id
+
+
+global_max_seq_len = 100000
+
+
+def complete_embedding_matrix_esm(seq_id,
+                                  seq_type,
+                                  seq,
+                                  truncation_seq_length,
+                                  init_emb,
+                                  trunc_type,
+                                  embedding_type,
+                                  matrix_add_special_token,
+                                  embedding_complete,
+                                  embedding_complete_seg_overlap,
+                                  device):
+    if init_emb is not None and embedding_complete and ("representations" in embedding_type or "matrix" in embedding_type):
+        ori_seq_len = len(seq)
+        # 每次能处理这么长度
+        # print("init_emb:", init_emb.shape)
+        cur_segment_len = init_emb.shape[0]
+        if matrix_add_special_token:
+            first_emb = init_emb[1:cur_segment_len - 1]
+        else:
+            first_emb = init_emb
+        if matrix_add_special_token:
+            cur_segment_len = cur_segment_len - 2
+        # print("cur_segment_len: %d" % cur_segment_len)
+        init_cur_segment_len = cur_segment_len
+        segment_num = int((ori_seq_len + cur_segment_len - 1) / cur_segment_len)
+        if segment_num <= 1:
+            return init_emb
+        append_emb = None
+        if embedding_complete_seg_overlap:
+            sliding_window = init_cur_segment_len // 2
+            print("Embedding Complete Seg Overlap: %r, ori seq len: %d, segment len: %d, init sliding windown: %d" % (embedding_complete_seg_overlap,
+                                                                                                                      ori_seq_len, init_cur_segment_len, sliding_window))
+            while True:
+                print("updated window: %d" % sliding_window)
+                try:
+                    # 第一个已经处理，滑动窗口
+                    if trunc_type == "right":
+                        last_end = init_cur_segment_len
+                        seg_idx = 0
+                        for pos_idx in range(init_cur_segment_len, ori_seq_len - sliding_window, sliding_window):
+                            seg_idx += 1
+                            last_end = min(pos_idx + sliding_window, ori_seq_len)
+                            seg_seq = seq[pos_idx - sliding_window:last_end]
+                            print("segment idx: %d, seg seq len: %d" % (seg_idx, len(seg_seq)))
+                            seg_emb, seg_processed_seq = predict_embedding_esm(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                                                                               trunc_type=trunc_type,
+                                                                               embedding_type=embedding_type,
+                                                                               repr_layers=[-1],
+                                                                               truncation_seq_length=truncation_seq_length,
+                                                                               device=device,
+                                                                               version="3B",
+                                                                               matrix_add_special_token=False
+                                                                               )
+                            # 有seq overlap 所以要截取
+                            if append_emb is None:
+                                append_emb = seg_emb[sliding_window:]
+                            else:
+                                append_emb = np.concatenate((append_emb, seg_emb[sliding_window:]), axis=0)
+                        if last_end < ori_seq_len:
+                            seg_idx += 1
+                            remain = ori_seq_len - last_end
+                            seg_seq = seq[ori_seq_len - 2 * sliding_window:ori_seq_len]
+                            seg_emb, seg_processed_seq = predict_embedding_esm(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                                                                               trunc_type=trunc_type,
+                                                                               embedding_type=embedding_type,
+                                                                               repr_layers=[-1],
+                                                                               truncation_seq_length=truncation_seq_length,
+                                                                               device=device,
+                                                                               version="3B",
+                                                                               matrix_add_special_token=False
+                                                                               )
+                            # 有seq overlap 所以要截取
+                            if append_emb is None:
+                                append_emb = seg_emb[-remain:]
+                            else:
+                                append_emb = np.concatenate((append_emb, seg_emb[-remain:]), axis=0)
+                    else:
+                        last_start = -init_cur_segment_len
+                        seg_idx = 0
+                        for pos_idx in range(-init_cur_segment_len, -ori_seq_len + sliding_window, -sliding_window):
+                            seg_idx += 1
+                            last_start = min(pos_idx - sliding_window, -ori_seq_len)
+                            seg_seq = seq[last_start: pos_idx + sliding_window]
+                            seg_emb, seg_processed_seq = predict_embedding_esm(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                                                                               trunc_type=trunc_type,
+                                                                               embedding_type=embedding_type,
+                                                                               repr_layers=[-1],
+                                                                               truncation_seq_length=truncation_seq_length,
+                                                                               device=device,
+                                                                               version="3B",
+                                                                               matrix_add_special_token=False
+                                                                               )
+                            # 有seq overlap 所以要截取
+                            if append_emb is None:
+                                append_emb = seg_emb[:sliding_window]
+                            else:
+                                append_emb = np.concatenate((seg_emb[:sliding_window], append_emb), axis=0)
+                        if last_start > -ori_seq_len:
+                            seg_idx += 1
+                            remain = last_start - ori_seq_len
+                            seg_seq = seq[-ori_seq_len:-ori_seq_len + 2 * sliding_window]
+                            seg_emb, seg_processed_seq = predict_embedding_esm(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                                                                               trunc_type=trunc_type,
+                                                                               embedding_type=embedding_type,
+                                                                               repr_layers=[-1],
+                                                                               truncation_seq_length=truncation_seq_length,
+                                                                               device=device,
+                                                                               version="3B",
+                                                                               matrix_add_special_token=False
+                                                                               )
+                            # 有seq overlap 所以要截取
+                            if append_emb is None:
+                                append_emb = seg_emb[:remain]
+                            else:
+                                append_emb = np.concatenate((seg_emb[:remain], append_emb), axis=0)
+                except Exception as e:
+                    append_emb = None
+                if append_emb is not None:
+                    break
+                print("fail, change sliding window: %d -> %d" % (sliding_window, int(sliding_window * 0.95)))
+                sliding_window = int(sliding_window * 0.95)
+        else:
+            while True:
+                print("ori seq len: %d, segment len: %d" % (ori_seq_len, cur_segment_len))
+                try:
+                    # 第一个已经处理，最后一个单独处理（需要向左/向右扩充至cur_segment_len长度）
+                    if trunc_type == "right":
+                        begin_seq_idx = 0
+                    else:
+                        begin_seq_idx = ori_seq_len - (segment_num - 1) * cur_segment_len
+                    for seg_idx in range(1, segment_num - 1):
+                        seg_seq = seq[begin_seq_idx + seg_idx * cur_segment_len: begin_seq_idx + (seg_idx + 1) * cur_segment_len]
+                        # print("segment idx: %d, seg_seq(%d): %s" % (seg_idx, len(seg_seq), seg_seq))
+                        print("segment idx: %d, seg seq len: %d" % (seg_idx, len(seg_seq)))
+                        seg_emb, seg_processed_seq = predict_embedding_esm(
+                            sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                            trunc_type=trunc_type,
+                            embedding_type=embedding_type,
+                            repr_layers=[-1],
+                            truncation_seq_length=truncation_seq_length,
+                            device=device,
+                            version="3B",
+                            matrix_add_special_token=False
+                        )
+
+                        if append_emb is None:
+                            append_emb = seg_emb
+                        else:
+                            if trunc_type == "right":
+                                append_emb = np.concatenate((append_emb, seg_emb), axis=0)
+                            else:
+                                append_emb = np.concatenate((seg_emb, append_emb), axis=0)
+
+                    if trunc_type == "right":
+                        # 处理最后一个
+                        last_seg_seq = seq[-cur_segment_len:]
+                        really_len = (ori_seq_len - (segment_num - 1) * cur_segment_len)
+                        # print("last seg seq: %s" % last_seg_seq)
+                        print("last seg seq len: %d, really len: %d" % (len(last_seg_seq), really_len))
+                        last_seg_emb, last_seg_processed_seq_len = predict_embedding_esm(
+                            sample=[seq_id + "_seg_%d" % (segment_num - 1), seq_type, last_seg_seq],
+                            trunc_type=trunc_type,
+                            embedding_type=embedding_type,
+                            repr_layers=[-1],
+                            truncation_seq_length=truncation_seq_length,
+                            device=device,
+                            version="3B",
+                            matrix_add_special_token=False
+                        )
+                        last_seg_emb = last_seg_emb[-really_len:, :]
+                        append_emb = np.concatenate((append_emb, last_seg_emb), axis=0)
+                    else:
+                        # 处理第一个
+                        first_seg_seq = seq[:cur_segment_len]
+                        really_len = (ori_seq_len - (segment_num - 1) * cur_segment_len)
+                        # print("first seg seq: %s" % first_seg_seq)
+                        print("first seg seq len: %d, really len: %d" % (len(first_seg_seq), really_len))
+                        first_seg_emb, first_seg_processed_seq = predict_embedding_esm(sample=[seq_id + "_seg_0", seq_type, first_seg_seq],
+                                                                                       trunc_type=trunc_type,
+                                                                                       embedding_type=embedding_type,
+                                                                                       repr_layers=[-1],
+                                                                                       truncation_seq_length=truncation_seq_length,
+                                                                                       device=device,
+                                                                                       version="3B",
+                                                                                       matrix_add_special_token=False
+                                                                                       )
+                        first_seg_emb = first_seg_emb[:really_len, :]
+                        append_emb = np.concatenate((first_seg_emb, append_emb), axis=0)
+                except Exception as e:
+                    append_emb = None
+                if append_emb is not None:
+                    break
+                print("fail, change segment len: %d -> %d, change seg num: %d -> %d" % (cur_segment_len, int(cur_segment_len * 0.95), segment_num, int((ori_seq_len + cur_segment_len - 1) / cur_segment_len)))
+                cur_segment_len = int(cur_segment_len * 0.95)
+                segment_num = int((ori_seq_len + cur_segment_len - 1) / cur_segment_len)
+
+            append_emb = append_emb[init_cur_segment_len - cur_segment_len:]
+        if trunc_type == "right":
+            complete_emb = np.concatenate((first_emb, append_emb), axis=0)
+        else:
+            complete_emb = np.concatenate((append_emb, first_emb), axis=0)
+        print("seq len: %d, seq embedding matrix len: %d" % (ori_seq_len, complete_emb.shape[0] + (2 if matrix_add_special_token else 0)))
+        print("-" * 50)
+        assert complete_emb.shape[0] == ori_seq_len
+        if matrix_add_special_token:
+            complete_emb = np.concatenate((init_emb[0:1, :], complete_emb, init_emb[-1:, :]), axis=0)
+        init_emb = complete_emb
+    return init_emb
+
+
+class Encoder(object):
+    def __init__(self,
+                 llm_type,
+                 llm_dirpath,
+                 input_type,
+                 trunc_type,
+                 seq_max_length,
+                 prepend_bos=True,
+                 append_eos=True,
+                 vector_dirpath=None,
+                 matrix_dirpath=None,
+                 local_rank=-1,
+                 use_cpu=False,
+                 **kwargs):
+        print("------Encoder------")
+        self.llm_type = llm_type
+        self.llm_dirpath = llm_dirpath
+        self.input_type = input_type
+        self.trunc_type = trunc_type
+        self.seq_max_length = seq_max_length
+        # vector
+        if vector_dirpath and "#" in vector_dirpath:
+            self.vector_dirpath = list(vector_dirpath.split("#"))
+        elif vector_dirpath:
+            self.vector_dirpath = [vector_dirpath]
+        else:
+            self.vector_dirpath = None
+        # matrix
+        if matrix_dirpath and "#" in matrix_dirpath:
+            self.matrix_dirpath = list(matrix_dirpath.split("#"))
+        elif matrix_dirpath:
+            self.matrix_dirpath = [matrix_dirpath]
+        else:
+            self.matrix_dirpath = None
+        # special tokens
+        self.prepend_bos = prepend_bos
+        self.append_eos = append_eos
+
+        self.matrix_add_special_token = False
+        if "matrix_add_special_token" in kwargs and kwargs["matrix_add_special_token"]:
+            self.matrix_add_special_token = kwargs["matrix_add_special_token"]
+
+        print("Encoder: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
+        if self.matrix_add_special_token:
+            self.prepend_bos = True
+            self.append_eos = True
+
+        if "embedding_complete" in kwargs and kwargs["embedding_complete"]:
+            self.embedding_complete = kwargs["embedding_complete"]
+            print("Encoder: embedding_complete=%r" % self.embedding_complete)
+        else:
+            self.embedding_complete = False
+        if "embedding_complete_seg_overlap" in kwargs and kwargs["embedding_complete_seg_overlap"]:
+            self.embedding_complete_seg_overlap = kwargs["embedding_complete_seg_overlap"]
+            print("Encoder: embedding_complete_seg_overlap=%r" % self.embedding_complete_seg_overlap)
+        else:
+            self.embedding_complete_seg_overlap = False
+
+        if "matrix_embedding_exists" in kwargs and kwargs["matrix_embedding_exists"]:
+            self.matrix_embedding_exists = kwargs["matrix_embedding_exists"]
+        else:
+            self.matrix_embedding_exists = False
+
+        if local_rank == -1 and not use_cpu and torch.cuda.is_available():
+            device = torch.device("cuda")
+        elif torch.cuda.is_available() and local_rank > -1:
+            device = torch.device("cuda", local_rank)
+        else:
+            device = torch.device("cpu")
+        print("Encoder device: ", device)
+        self.device = device
+        self.seq_id_2_emb_filename = {}
+        print("Encoder: prepend_bos=%r, append_eos=%r" % (self.prepend_bos, self.append_eos))
+        print("Encoder: matrix_add_special_token=%r, "
+              "embedding_complete=%r, "
+              "embedding_complete_seg_overlap=%r, "
+              "matrix_embedding_exists=%r" %
+              (self.matrix_add_special_token,
+               self.embedding_complete,
+               self.embedding_complete_seg_overlap,
+               self.matrix_embedding_exists)
+              )
+        print("-" * 50)
+
+    def __get_embedding__(self, seq_id, seq_type, seq, embedding_type):
+        seq_type = seq_type.strip().lower()
+        if "prot" not in seq_type and "gene" not in seq_type:
+            raise Exception("Not support this seq_type=%s" % seq_type)
+        embedding_info = None
+        if seq_id in self.seq_id_2_emb_filename:
+            emb_filename = self.seq_id_2_emb_filename[seq_id]
+            try:
+                dirpath_list = self.vector_dirpath if embedding_type in ["bos", "vector"] else self.matrix_dirpath
+                for dirpath in dirpath_list:
+                    emb_filepath = os.path.join(dirpath, emb_filename)
+                    if os.path.exists(emb_filepath):
+                        embedding_info = torch.load(emb_filepath)
+                        return embedding_info
+            except Exception as e:
+                print(e)
+                embedding_info = None
+        elif embedding_type in ["bos", "vector"] and self.vector_dirpath is not None \
+                or embedding_type not in ["bos", "vector"] and self.matrix_dirpath is not None:
+            emb_filename = calc_emb_filename_by_seq_id(seq_id, embedding_type)
+            try:
+                dirpath_list = self.vector_dirpath if embedding_type in ["bos", "vector"] else self.matrix_dirpath
+                for dirpath in dirpath_list:
+                    emb_filepath = os.path.join(dirpath, emb_filename)
+                    if os.path.exists(emb_filepath):
+                        embedding_info = torch.load(emb_filepath)
+                        self.seq_id_2_emb_filename[seq_id] = emb_filename
+                        return embedding_info
+            except Exception as e:
+                print(e)
+                embedding_info = None
+
+        if embedding_info is None:
+            if self.matrix_embedding_exists:
+                with open("matrix_embedding_not_exists.txt", "a+") as wfp:
+                    print("seq_id: %s" % seq_id)
+                    wfp.write("seq_id: %s\n" % seq_id)
+                    wfp.flush()
+        if embedding_info is None:
+            if self.llm_type == "esm":
+                seq_len = len(seq)
+                if self.embedding_complete:
+                    truncation_seq_length = min(seq_len, global_max_seq_len)
+                else:
+                    truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
+                    truncation_seq_length = min(seq_len, truncation_seq_length)
+                embedding_info, processed_seq = predict_embedding_esm(
+                    sample=[seq_id, seq],
+                    trunc_type=self.trunc_type,
+                    embedding_type=embedding_type,
+                    repr_layers=[-1],
+                    truncation_seq_length=truncation_seq_length,
+                    matrix_add_special_token=self.matrix_add_special_token,
+                    version="3B",
+                    device=self.device
+                )
+                while embedding_info is None:
+                    print("%s embedding error, max_len from %d truncate to %d" % (seq_id,
+                                                                                  truncation_seq_length,
+                                                                                  int(truncation_seq_length * 0.95)))
+                    truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.95 \
+                                            - int(self.prepend_bos) - int(self.append_eos)
+                    truncation_seq_length = int(truncation_seq_length)
+                    embedding_info, processed_seq = predict_embedding_esm(
+                        sample=[seq_id, seq],
+                        trunc_type=self.trunc_type,
+                        embedding_type=embedding_type,
+                        repr_layers=[-1],
+                        truncation_seq_length=truncation_seq_length,
+                        version="3B",
+                        matrix_add_special_token=self.matrix_add_special_token,
+                        device=self.device
+                    )
+                    if embedding_info is not None and self.embedding_complete:
+                        embedding_info = complete_embedding_matrix_esm(
+                            seq_id=seq_id,
+                            seq_type=seq_type,
+                            seq=seq,
+                            truncation_seq_length=truncation_seq_length,
+                            init_emb=embedding_info,
+                            trunc_type=self.trunc_type,
+                            embedding_type=embedding_type,
+                            matrix_add_special_token=self.matrix_add_special_token,
+                            embedding_complete=self.embedding_complete,
+                            embedding_complete_seg_overlap=self.embedding_complete_seg_overlap,
+                            device=self.device
+                        )
+            else:
+                raise Exception("Not support the llm_type=%s" % self.llm_type)
+        if embedding_type in ["bos", "vector"] and self.vector_dirpath is not None \
+                or embedding_type not in ["bos", "vector"] and self.matrix_dirpath is not None:
+            emb_filename = calc_emb_filename_by_seq_id(seq_id, embedding_type)
+            dirpath_list = self.vector_dirpath if embedding_type in ["bos", "vector"] else self.matrix_dirpath
+            dirpath = dirpath_list[0]
+            emb_filepath = os.path.join(dirpath, emb_filename)
+            torch.save(embedding_info, emb_filepath)
+            self.seq_id_2_emb_filename[seq_id] = emb_filename
+        return embedding_info
+
+    def encode_single(self,
+                      seq_id,
+                      seq_type,
+                      seq,
+                      vector_filename=None,
+                      matrix_filename=None,
+                      label=None):
+        seq_type = seq_type.strip().lower()
+
+        # for embedding vector
+        vector = None
+        if self.input_type in ["vector", "seq_vector"]:
+            if vector_filename is None:
+                if seq is None:
+                    raise Exception("seq is none and vector_filename is none")
+                elif seq_type not in ["protein", "prot", "gene"]:
+                    raise Exception("now not support embedding of the seq_type=%s" % seq_type)
+                else:
+                    vector = self.__get_embedding__(seq_id, seq_type, seq, "vector")
+            elif isinstance(vector_filename, str):
+                for vector_dir in self.vector_dirpath:
+                    vector_filepath = os.path.join(vector_dir, vector_filename)
+                    if os.path.exists(vector_filepath):
+                        vector = torch.load(vector_filepath)
+                        break
+            elif isinstance(vector_filename, np.ndarray):
+                vector = vector_filename
+            else:
+                raise Exception("vector is not filepath-str and np.ndarray")
+
+        # for embedding matrix
+        matrix = None
+        if self.input_type in ["matrix", "seq_matrix"]:
+            if matrix_filename is None:
+                if seq is None:
+                    raise Exception("seq is none and matrix_filename is none")
+                elif seq_type not in ["protein", "prot", "gene"]:
+                    raise Exception("now not support embedding of the seq_type=%s" % seq_type)
+                else:
+                    matrix = self.__get_embedding__(seq_id, seq_type, seq, "matrix")
+            elif isinstance(matrix_filename, str):
+                for matrix_dir in self.matrix_dirpath:
+                    matrix_filepath = os.path.join(matrix_dir, matrix_filename)
+                    if os.path.exists(matrix_filepath):
+                        matrix = torch.load(matrix_filepath)
+                        break
+            elif isinstance(matrix_filename, np.ndarray):
+                matrix = matrix_filename
+            else:
+                raise Exception("matrix is not filepath-str and np.ndarray")
+
+        seq = seq.strip().upper()
+        return {
+            "seq_id": seq_id,
+            "seq": seq,
+            "seq_type": seq_type,
+            "vector": vector,
+            "matrix": matrix,
+            "label": label
+        }
+
+    def encode_pair(self,
+                    seq_id_a,
+                    seq_id_b,
+                    seq_type_a,
+                    seq_type_b,
+                    seq_a,
+                    seq_b,
+                    vector_filename_a=None,
+                    vector_filename_b=None,
+                    matrix_filename_a=None,
+                    matrix_filename_b=None,
+                    label=None
+                    ):
+        seq_type_a = seq_type_a.strip().lower()
+        seq_type_b = seq_type_b.strip().lower()
+
+        # for embedding vector
+        vector_a, vector_b = None, None
+        if self.input_type in ["vector", "seq_vector"]:
+            if vector_filename_a is None:
+                if seq_a is None:
+                    raise Exception("seq_a is none and vector_filename_a is none")
+                elif seq_type_a not in ["prot", "protein", "gene"]:
+                    raise Exception("now not support embedding of the seq_type_a=%s" % seq_type_a)
+                else:
+                    vector_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "vector")
+            elif isinstance(vector_filename_a, str):
+                for vector_dir in self.vector_dirpath:
+                    vector_filepath_a = os.path.join(vector_dir, vector_filename_a)
+                    if os.path.exists(vector_filepath_a):
+                        vector_a = torch.load(vector_filepath_a)
+                        break
+            elif isinstance(vector_filename_a, np.ndarray):
+                vector_a = vector_filename_a
+            else:
+                raise Exception("vector_a is not filepath-str and np.ndarray")
+            if vector_filename_b is None:
+                if seq_b is None:
+                    raise Exception("seq_b is none and vector_filename_b is none")
+                elif seq_type_b not in ["prot", "protein", "gene"]:
+                    raise Exception("now not support embedding of the seq_type_b=%s" % seq_type_b)
+                else:
+                    vector_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "vector")
+            elif isinstance(vector_filename_b, str):
+                for vector_dir in self.vector_dirpath:
+                    vector_filepath_b = os.path.join(vector_dir, vector_filename_b)
+                    if os.path.exists(vector_filepath_b):
+                        vector_b = torch.load(vector_filepath_b)
+                        break
+            elif isinstance(vector_filename_b, np.ndarray):
+                vector_b = vector_filename_b
+            else:
+                raise Exception("vector_b is not filepath-str and np.ndarray")
+
+        # for embedding matrix
+        matrix_a, matrix_b = None, None
+        if self.input_type in ["matrix", "seq_matrix"]:
+            if matrix_filename_a is None:
+                if seq_a is None:
+                    raise Exception("seq_a is none and matrix_filename_a is none")
+                elif seq_type_a not in ["prot", "protein", "gene"]:
+                    raise Exception("now not support embedding of the seq_type_a=%s" % seq_type_a)
+                else:
+                    matrix_a = self.__get_embedding__(seq_id_a, seq_type_a, seq_a, "matrix")
+            elif isinstance(matrix_filename_a, str):
+                for matrix_dir in self.matrix_dirpath:
+                    matrix_filepath_a = os.path.join(matrix_dir, matrix_filename_a)
+                    if os.path.exists(matrix_filepath_a):
+                        matrix_a = torch.load(matrix_filepath_a)
+                        break
+            elif isinstance(matrix_filename_a, np.ndarray):
+                matrix_a = matrix_filename_a
+            else:
+                raise Exception("matrix_a is not filepath-str and np.ndarray")
+            if matrix_filename_b is None:
+                if seq_b is None:
+                    raise Exception("seq_b is none and matrix_filename_b is none")
+                elif seq_type_b not in ["prot", "protein", "gene"]:
+                    raise Exception("now not support embedding of the seq_type_b=%s" % seq_type_b)
+                else:
+                    matrix_b = self.__get_embedding__(seq_id_b, seq_type_b, seq_b, "matrix")
+            elif isinstance(matrix_filename_b, str):
+                for matrix_dir in self.matrix_dirpath:
+                    matrix_filepath_b = os.path.join(matrix_dir, matrix_filename_b)
+                    if os.path.exists(matrix_filepath_b):
+                        matrix_b = torch.load(matrix_filepath_b)
+                        break
+            elif isinstance(matrix_filename_b, np.ndarray):
+                matrix_b = matrix_filename_b
+            else:
+                raise Exception("matrix_b is not filepath-str and np.ndarray")
+
+        seq_a = seq_a.strip().upper()
+        seq_b = seq_b.strip().upper()
+        return {
+            "seq_id_a": seq_id_a,
+            "seq_a": seq_a,
+            "seq_type_a": seq_type_a,
+            "vector_a": vector_a,
+            "matrix_a": matrix_a,
+            "seq_id_b": seq_id_b,
+            "seq_b": seq_b,
+            "seq_type_b": seq_type_b,
+            "vector_b": vector_b,
+            "matrix_b": matrix_b,
+            "label": label
+        }
+
+
+
+
