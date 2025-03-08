@@ -585,15 +585,20 @@ def writer_info_tb(tb_writer, logs, global_step, prefix=None):
     :param prefix:
     :return:
     '''
+    if prefix is None:
+        prefix = ""
+    elif prefix != "":
+        prefix = prefix + "_"
     for key, value in logs.items():
         if isinstance(value, dict):
-            '''
-            for key1, value1 in value.items():
-                tb_writer.add_scalar(key + "_" + key1, value1, global_step)
-            '''
-            writer_info_tb(tb_writer, value, global_step, prefix=key)
+            writer_info_tb(tb_writer, value, global_step, prefix=prefix + key)
+        elif isinstance(value, list):
+            print("writer_info_tb List, Key-Value: %s=%s" % (key, value))
         elif not math.isnan(value) and not math.isinf(value):
-            tb_writer.add_scalar(prefix + "_" + key if prefix else key, value, global_step)
+            try:
+                tb_writer.add_scalar(prefix + key, value, global_step)
+            except Exception as e:
+                print(e)
         else:
             print("writer_info_tb NaN or Inf, Key-Value: %s=%s" % (key, value))
 
