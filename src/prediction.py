@@ -247,7 +247,7 @@ def load_trained_model(model_config, args, model_class, model_dirpath):
         model = model_class.from_pretrained(model_dirpath, args=args)
     except Exception as e:
         model = model_class(model_config, args=args)
-        pretrained_net_dict = torch.load(os.path.join(args.model_dirpath, "pytorch.pth"),
+        pretrained_net_dict = torch.load(os.path.join(model_dirpath, "pytorch.pth"),
                                          map_location=torch.device("cpu"))
         model_state_dict_keys = set()
         for key in model.state_dict():
@@ -307,25 +307,26 @@ def create_encoder_batch_convecter(model_args, seq_subword, seq_tokenizer):
                       use_cpu=True if model_args.gpu_id < 0 else False
                       )
 
-    batch_converter = BatchConverter(task_level_type=model_args.task_level_type,
-                                     label_size=model_args.label_size,
-                                     output_mode=model_args.output_mode,
-                                     seq_subword=seq_subword,
-                                     seq_tokenizer=seq_tokenizer,
-                                     no_position_embeddings=model_args.no_position_embeddings,
-                                     no_token_type_embeddings=model_args.no_token_type_embeddings,
-                                     truncation_seq_length=model_args.truncation_seq_length,
-                                     truncation_matrix_length=model_args.truncation_matrix_length,
-                                     ignore_index=model_args.ignore_index,
-                                     non_ignore=model_args.non_ignore,
-                                     padding_idx=0,
-                                     unk_idx=1,
-                                     cls_idx=2,
-                                     eos_idx=3,
-                                     mask_idx=4,
-                                     prepend_bos=not model_args.not_prepend_bos,
-                                     append_eos=not model_args.not_append_eos
-                                     )
+    batch_converter = BatchConverter(
+        task_level_type=model_args.task_level_type,
+        label_size=model_args.label_size,
+        output_mode=model_args.output_mode,
+        seq_subword=seq_subword,
+        seq_tokenizer=seq_tokenizer,
+        no_position_embeddings=model_args.no_position_embeddings,
+        no_token_type_embeddings=model_args.no_token_type_embeddings,
+        truncation_seq_length=model_args.truncation_seq_length,
+        truncation_matrix_length=model_args.truncation_matrix_length,
+        ignore_index=model_args.ignore_index,
+        non_ignore=model_args.non_ignore,
+        padding_idx=0,
+        unk_idx=1,
+        cls_idx=2,
+        eos_idx=3,
+        mask_idx=4,
+        prepend_bos=not model_args.not_prepend_bos,
+        append_eos=not model_args.not_append_eos
+    )
     return encoder, batch_converter
 
 

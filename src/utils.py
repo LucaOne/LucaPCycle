@@ -497,7 +497,7 @@ def load_trained_model(model_config, args, model_class, model_dirpath):
         model = model_class.from_pretrained(model_dirpath, args=args)
     except Exception as e:
         model = model_class(model_config, args=args)
-        pretrained_net_dict = torch.load(os.path.join(args.model_dirpath, "pytorch.pth"),
+        pretrained_net_dict = torch.load(os.path.join(model_dirpath, "pytorch.pth"),
                                          map_location=torch.device("cpu"))
         model_state_dict_keys = set()
         for key in model.state_dict():
@@ -566,15 +566,20 @@ def writer_info_tb(tb_writer, logs, global_step, prefix=None):
     :param prefix:
     :return:
     '''
+    if prefix is None:
+        prefix = ""
+    elif prefix != "":
+        prefix = prefix + "_"
     for key, value in logs.items():
         if isinstance(value, dict):
-            '''
-            for key1, value1 in value.items():
-                tb_writer.add_scalar(key + "_" + key1, value1, global_step)
-            '''
-            writer_info_tb(tb_writer, value, global_step, prefix=key)
+            writer_info_tb(tb_writer, value, global_step, prefix=prefix + key)
+        elif isinstance(value, list):
+            print("writer_info_tb List, Key-Value: %s=%s" % (key, str(value)))
         elif not math.isnan(value) and not math.isinf(value):
-            tb_writer.add_scalar(prefix + "_" + key if prefix else key, value, global_step)
+            try:
+                tb_writer.add_scalar(prefix + key, value, global_step)
+            except Exception as e:
+                print(e)
         else:
             print("writer_info_tb NaN or Inf, Key-Value: %s=%s" % (key, value))
 
