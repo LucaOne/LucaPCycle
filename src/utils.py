@@ -862,17 +862,19 @@ def download_folder(base_url, file_names, local_dir):
 
 def download_trained_checkpoint_lucapcycle(
         model_dir,
-        model_dataset_name=["extra_p_2_class_v2", "extra_p_31_class_v2"],
+        model_dataset_name=["extra_p_2_class_v3", "extra_p_31_class_v3"],
         model_dataset_type=["protein", "protein"],
         model_task_type=["binary_class", "multi_class"],
         model_type=["lucaprot", "lucaprot"],
         model_input_type=["seq_matrix", "seq_matrix"],
-        model_time_str=["20240120061735", "20240120061524"],
-        model_step=["955872", "294536"],
+        model_time_str=["20240924203640", "20240923094428"],
+        model_step=["264284", "8569250"],
         base_url="http://47.93.21.181/lucapcycle/TrainedCheckPoint"
 ):
     try:
-        download_trained_checkpoint_vocab_subword(model_dir=model_dir, model_dataset_name=model_dataset_name)
+        download_trained_checkpoint_vocab_subword(
+            model_dir=model_dir
+        )
         logs_file_names = ["logs.txt", "label.txt"]
         models_file_names = ["config.json", "pytorch_model.bin", "training_args.bin",
                              "tokenizer/special_tokens_map.json", "tokenizer/tokenizer_config.json", "tokenizer/vocab.txt"]
@@ -941,27 +943,26 @@ def download_trained_checkpoint_lucapcycle(
 
 def download_trained_checkpoint_vocab_subword(
         model_dir,
-        model_dataset_name=["extra_p_2_class_v2", "extra_p_31_class_v2"],
-        base_url="http://47.93.21.181/lucapcycle/LucaPCycle/"
+        base_url="http://47.93.21.181/lucapcycle/LucaPCycleV3/"
 ):
     try:
         vocab_dir = "vocab/"
-        vocab_file_names = ["extra_p_50_subword_vocab_20000.txt", "vocab/extra_p_31_class_subword_vocab_20000.txt"]
+        vocab_file_names = ["extra_p/extra_p_50_subword_vocab_20000.txt"]
         subword_dir = "subword/"
-        subword_file_names = ["extra_p_50_codes_20000.txt", "extra_p_31_class_codes_20000.txt"]
-        for model_idx in range(len(model_dataset_name)):
-            vocab_filepath = os.path.join(vocab_dir, model_dataset_name[model_idx], vocab_file_names[model_idx])
+        subword_file_names = ["extra_p/extra_p_50_codes_20000.txt"]
+        for file_idx in range(len(vocab_file_names)):
+            vocab_filepath = os.path.join(vocab_dir, vocab_file_names[file_idx])
             vocab_local_filepath = os.path.join(model_dir, vocab_filepath)
             exists = True
             if not os.path.exists(vocab_local_filepath):
                 exists = False
-            subword_filepath = os.path.join(subword_dir, model_dataset_name[model_idx], subword_file_names[model_idx])
+            subword_filepath = os.path.join(subword_dir, subword_file_names[file_idx])
             subword_local_filepath = os.path.join(model_dir, subword_filepath)
             if not os.path.exists(subword_local_filepath):
                 exists = False
             if not exists:
                 print("*" * 20 + "Downloading" + "*" * 20)
-                print("Downloading LucaPCycle Vocab & Subword: LucaPCycle-%s ..." % model_dataset_name[model_idx])
+                print("Downloading LucaPCycle Vocab & Subword: LucaPCycleV3 ...")
                 print("Wait a moment, please.")
                 # download logs
                 if not os.path.exists(os.path.dirname(vocab_local_filepath)):
@@ -977,6 +978,6 @@ def download_trained_checkpoint_vocab_subword(
                 print("*" * 50)
     except Exception as e:
         print(e)
-        print("Download automatically LucaPCycle Vocab & Subwordfailed!")
+        print("Download automatically LucaPCycle Vocab & Subword failed!")
         print("You can manually download 'vocab/' and 'subword/' into the project: %s/ from %s" % (os.path.abspath(model_dir), os.path.join(base_url, "LucaPCycle/")))
         raise Exception(e)
