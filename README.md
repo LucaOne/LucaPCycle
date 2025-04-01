@@ -3,6 +3,9 @@ We developed a dual-channel model named LucaPCycle, based on the raw sequence an
 
 We constructed two models, including an identification model(binary classification) and a fine-grained classification of specific phosphate-solubilizing functional types(31 classification).
 
+# TimeLine
+* 2024/12/01: The latest branch is `V3`,  so use `V3` first instead of the `master` branch(i.e. `V2`). 
+
 ## 1. Model Architecture     
 
 <center>
