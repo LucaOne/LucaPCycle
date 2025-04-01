@@ -927,7 +927,7 @@ def download_trained_checkpoint_vocab_subword(
 ):
     try:
         vocab_dir = "vocab/"
-        vocab_file_names = ["extra_p_50_subword_vocab_20000.txt", "vocab/extra_p_31_class_subword_vocab_20000.txt"]
+        vocab_file_names = ["extra_p_50_subword_vocab_20000.txt", "extra_p_31_class_subword_vocab_20000.txt"]
         subword_dir = "subword/"
         subword_file_names = ["extra_p_50_codes_20000.txt", "extra_p_31_class_codes_20000.txt"]
         for model_idx in range(len(model_dataset_name)):
@@ -958,6 +958,6 @@ def download_trained_checkpoint_vocab_subword(
                 print("*" * 50)
     except Exception as e:
         print(e)
-        print("Download automatically LucaPCycle Vocab & Subwordfailed!")
+        print("Download automatically LucaPCycle Vocab & Subword failed!")
         print("You can manually download 'vocab/' and 'subword/' into the project: %s/ from %s" % (os.path.abspath(model_dir), os.path.join(base_url, "LucaPCycle/")))
         raise Exception(e)
