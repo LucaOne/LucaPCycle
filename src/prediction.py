@@ -434,6 +434,9 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
 
 def run_args():
     parser = argparse.ArgumentParser(description="Prediction")
+    # the protein LLM exists path
+    parser.add_argument("--torch_hub_dir", default=None, type=str,
+                        help="set the torch hub dir path for saving pretrained model(default: ~/.cache/torch/hub)")
     parser.add_argument("--seq_id", default=None, type=str,  help="the seq id")
     parser.add_argument("--seq", default=None, type=str,  help="the sequence")
     parser.add_argument("--seq_type", default=None, type=str, required=True, choices=["gene", "prot"], help="the input seq type.")
@@ -466,6 +469,10 @@ def run_args():
 
 if __name__ == "__main__":
     args = run_args()
+    if args.torch_hub_dir is not None:
+        if not os.path.exists(args.torch_hub_dir):
+            os.makedirs(args.torch_hub_dir)
+        os.environ['TORCH_HOME'] = args.torch_hub_dir
     assert args.seq is not None or (args.input_file is not None and os.path.exists(args.input_file))
     if args.input_file is not None and os.path.exists(args.input_file):
         exists_ids = set()
