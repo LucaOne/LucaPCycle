@@ -26,6 +26,9 @@ except ImportError:
 
 def main():
     parser = argparse.ArgumentParser(description="Prediction")
+    # the protein LLM exists path
+    parser.add_argument("--torch_hub_dir", default=None, type=str,
+                        help="set the torch hub dir path for saving pretrained model(default: ~/.cache/torch/hub)")
     parser.add_argument("--data_path", default=None, type=str, required=True, help="the data filepath")
     parser.add_argument("--seq_type", default=None, type=str, required=True, help="the seq type")
     parser.add_argument("--save_path", default=None, type=str, required=True, help="the results saved filepath")
@@ -45,6 +48,10 @@ def main():
 
 if __name__ == "__main__":
     args = main()
+    if args.torch_hub_dir is not None:
+        if not os.path.exists(args.torch_hub_dir):
+            os.makedirs(args.torch_hub_dir)
+        os.environ['TORCH_HOME'] = args.torch_hub_dir
     args, model_config, seq_subword, seq_tokenizer, model, label_id_2_name, label_name_2_id, encoder, batch_converter, predict_func = load_environment(args)
     assert args.data_path is not None and os.path.exists(args.data_path)
     file_format = args.data_path.split(".")[-1]
