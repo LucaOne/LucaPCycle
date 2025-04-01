@@ -111,30 +111,34 @@ python prediction_v2.py \
 
 #### Parameters
 1) Input data parameters:
-* seq_type: `str`, the input seq type(`gene` or `prot`)
-* input_file: `Path`, the input filepath(for a batch samples, format: `fasta` or `csv`(contain header, columns: `seq_id`, `seq`))
-* seq_id: `str`, the seq id(for one sample)
-* seq: `str`, the sequence(for one sample)
-* save_path: `Path`, the saved dir path of the batch samples predicted results(only for batch prediction)
+   * seq_type: `str`, the input seq type(`gene` or `prot`)
+   * input_file: `Path`, the input filepath(for a batch samples, format: `fasta` or `csv`(contain header, columns: `seq_id`, `seq`))
+   * seq_id: `str`, the seq id(for one sample)
+   * seq: `str`, the sequence(for one sample)
+   * save_path: `Path`, the saved dir path of the batch samples predicted results(only for batch prediction)
 
 2) Trained LucaPCycle checkpoint parameters:
-* model_path: `Path`, model dir path，default: `../` (meaning the checkpoint in the project)
-* dataset_name: `str`, the checkpoint version: `extra_p_2_class_v3`(2-classification) or `extra_p_31_class_v3`(31-classification)
-* dataset_type: `str`, only `protein`, default: `protein`
-* task_type: `str`, the trained task type: `binary_class`(2-classification) or `multi_class`(31-classification)
-* task_level_type: `str`, sequence-level tasks, default: `seq-level`
-* model_type: `str`, the model type, default: `lucaprot`
-* input_type: `str`, the model channels, default: `seq_matrix`
-* input_mode: `str`, the input model, default: `single`
-* time_str: `str`, the trained checkpoint running time str: `20240924203640`(2-classification) or `20240923094428`(31-classification)    
-* step: `int`, the checkpoint step: `264284`(2-classification) or `8569250`(31-classification)
+   * model_path: `Path`, model dir path，default: `../` (meaning the checkpoint in the project)
+   * dataset_name: `str`, the checkpoint version: `extra_p_2_class_v3`(2-classification) or `extra_p_31_class_v3`(31-classification)
+   * dataset_type: `str`, only `protein`, default: `protein`
+   * task_type: `str`, the trained task type: `binary_class`(2-classification) or `multi_class`(31-classification)
+   * task_level_type: `str`, sequence-level tasks, default: `seq-level`
+   * model_type: `str`, the model type, default: `lucaprot`
+   * input_type: `str`, the model channels, default: `seq_matrix`
+   * input_mode: `str`, the input model, default: `single`
+   * time_str: `str`, the trained checkpoint running time str: `20240924203640`(2-classification) or `20240923094428`(31-classification)    
+   * step: `int`, the checkpoint step: `264284`(2-classification) or `8569250`(31-classification)
 
 3) Running parameters:
-* topk: `int`, the topk labels when inferring 31-classification, default: `None`(meaining k=1)
-* llm_truncation_seq_length: `int`, the max seq length to truncation(depends on the length of your sequence and the size of your GPU memory. default: `4096`
-* per_num: `int`, the print progress is determined by how many sequences are predicted.  default: `1000`
-* threshold: `float`, the threshold for binary-classification, default: `0.1`, (positive>=threshold, negative<threshold, small value leads to high recall, and large value to high precision)
-* gpu_id: `int`, the gpu id to use(-1 for cpu), default: `-1`
+   * topk: `int`, the topk labels when inferring 31-classification, default: `None`(meaining k=1)
+   * llm_truncation_seq_length: `int`, the max seq length to truncation(depends on the length of your sequence and the size of your GPU memory. default: `4096`
+   * per_num: `int`, the print progress is determined by how many sequences are predicted.  default: `1000`
+   * threshold: `float`, the threshold for binary-classification, default: `0.1`, (positive>=threshold, negative<threshold, small value leads to high recall, and large value to high precision)
+   * gpu_id: `int`, the gpu id to use(-1 for cpu), default: `-1`
+
+4) Protein LLM exists path(optional):
+   * torch_hub_dir: `Path`, the torch hub dir path for saving pretrained model(default: `~/.cache/torch/hub/`)
+
 
 ## 4. Model Building Dataset
 For the two models, we divided the dataset into the training, validation, and testing sets, which were used for model fitting, model finalization (based on the best F1-score training iteration), and performance reporting, respectively.

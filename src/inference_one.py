@@ -10,7 +10,7 @@
 @desc: inference one sample from input
 '''
 import argparse
-import sys
+import os, sys
 sys.path.append(".")
 sys.path.append("..")
 sys.path.append("../src")
@@ -22,6 +22,9 @@ except ImportError:
 
 def main():
     parser = argparse.ArgumentParser(description="Prediction")
+    # the protein LLM exists path
+    parser.add_argument("--torch_hub_dir", default=None, type=str,
+                        help="set the torch hub dir path for saving pretrained model(default: ~/.cache/torch/hub)")
     parser.add_argument("--seq_id_a", default=None, type=str, required=True, help="the seq id of seq-a")
     parser.add_argument("--seq_type_a", default=None, type=str, required=True, help="the seq type of seq-a")
     parser.add_argument("--seq_a", default=None, type=str, required=True, help="the sequence")
@@ -46,7 +49,12 @@ def main():
 
 if __name__ == "__main__":
     args = main()
-    args, model_config, seq_subword, seq_tokenizer, model, label_id_2_name, label_name_2_id, encoder, batch_converter, predict_func = load_environment(args)
+    if args.torch_hub_dir is not None:
+        if not os.path.exists(args.torch_hub_dir):
+            os.makedirs(args.torch_hub_dir)
+        os.environ['TORCH_HOME'] = args.torch_hub_dir
+    args, model_config, seq_subword, seq_tokenizer, model, label_id_2_name, label_name_2_id, \
+    encoder, batch_converter, predict_func = load_environment(args)
     if args.input_mode == "single":
         ori_input = [[args.seq_id, args.seq_type, args.seq]]
         record = encoder.encode_single(args.seq_id, args.seq_type, args.seq)

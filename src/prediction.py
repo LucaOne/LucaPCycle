@@ -691,6 +691,9 @@ def run(
 
 def run_args():
     parser = argparse.ArgumentParser(description="Prediction")
+    # the protein LLM exists path
+    parser.add_argument("--torch_hub_dir", default=None, type=str,
+                        help="set the torch hub dir path for saving pretrained model(default: ~/.cache/torch/hub)")
     # for one seq
     parser.add_argument("--seq_id", default=None, type=str,
                         help="the seq id")
@@ -770,7 +773,10 @@ if __name__ == "__main__":
     print("-" * 25 + "Run Args" + "-" * 25)
     print(args.__dict__)
     print("-" * 50)
-
+    if args.torch_hub_dir is not None:
+        if not os.path.exists(args.torch_hub_dir):
+            os.makedirs(args.torch_hub_dir)
+        os.environ['TORCH_HOME'] = args.torch_hub_dir
     assert args.seq is not None or (args.input_file is not None and os.path.exists(args.input_file))
     if args.input_file is not None and os.path.exists(args.input_file):
         file_suffix = os.path.basename(args.input_file).split(".")[-1]
