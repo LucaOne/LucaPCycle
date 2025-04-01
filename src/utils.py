@@ -923,7 +923,7 @@ def download_trained_checkpoint_lucapcycle(
 def download_trained_checkpoint_vocab_subword(
         model_dir,
         model_dataset_name=["extra_p_2_class_v2", "extra_p_31_class_v2"],
-        base_url="http://47.93.21.181/lucapcycle/LucaPCycle/"
+        base_url="http://47.93.21.181/lucapcycle/LucaPCycleV2/"
 ):
     try:
         vocab_dir = "vocab/"
