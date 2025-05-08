@@ -12,12 +12,14 @@
 '''
 import csv
 import json
+import uuid
 import os, sys
 import torch
 import codecs
 import time, shutil
 import numpy as np
 import argparse
+from datetime import datetime
 from collections import OrderedDict
 from subword_nmt.apply_bpe import BPE
 from transformers import BertConfig, BertTokenizer
@@ -591,6 +593,12 @@ def run(
         lucapcycle_args.truncation_matrix_length = truncation_seq_length
 
     lucapcycle_args.matrix_embedding_exists = matrix_embedding_exists
+    # embedding saved dir during prediction
+    if emb_dir:
+        # now = datetime.now()
+        # formatted_time = now.strftime("%Y%m%d%H%M%S")
+        unique_string = str(uuid.uuid4())
+        emb_dir = os.path.join(emb_dir, "%s-%d" % (unique_string, gpu_id))
     lucapcycle_args.emb_dir = emb_dir
     lucapcycle_args.vector_dirpath = lucapcycle_args.emb_dir if lucapcycle_args.emb_dir else None
     lucapcycle_args.matrix_dirpath = lucapcycle_args.emb_dir if lucapcycle_args.emb_dir else None
