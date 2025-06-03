@@ -228,18 +228,16 @@ Representatives from non-singleton P-solubilizing protein families.
 **<a href='https://www.biorxiv.org/content/early/2024/07/09/2024.07.09.602434'>LucaPCycle Biorxiv</a>**
 
 
-@article {   
-Zhang2024.07.09.602434,  
-author = {Zhang, Chuwen and He, Yong and Wang, Jieni and Chen, Tengkai and Baltar, Federico and Hu, Minjie and Liao, Jing and Xiao, Xi and Li, Zhao-Rong and Dong, Xiyang},      
-title = {Illuminating microbial phosphorus cycling in deep-sea cold seep sediments using protein language models},   
-elocation-id = {2024.07.09.602434},    
-year = {2024},       
-doi = {10.1101/2024.07.09.602434},        
-publisher = {Cold Spring Harbor Laboratory},     
-URL = {https://www.biorxiv.org/content/early/2024/07/09/2024.07.09.602434 },      
-eprint = {https://www.biorxiv.org/content/early/2024/07/09/2024.07.09.602434.full.pdf },       
-journal = {bioRxiv}        
-}   
+@article{LucaPCycle,
+title={LucaPCycle: Illuminating microbial phosphorus cycling in deep-sea cold seep sediments using protein language models},
+author={Zhang, Chuwen and He, Yong and Wang, Jieni and Chen, Tengkai and Baltar, Federico and Hu, Minjie and Liao, Jing and Xiao, Xi and Li, Zhao-Rong and Dong, Xiyang},
+journal={Nature Communications},
+volume={16},
+number={1},
+pages={1--16},
+year={2025},
+publisher={Nature Publishing Group}
+}
 
 
   
