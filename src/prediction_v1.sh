@@ -1,6 +1,6 @@
 # Binary Classification
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
-python prediction.py \
+python prediction_v1.py \
     --seq_type prot \
     --input_file ../test_data/examples.fasta \
     --llm_truncation_seq_length 10240 \
@@ -21,7 +21,7 @@ python prediction.py \
 
 # Multi-Class Classification
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
-python prediction.py \
+python prediction_v1.py \
     --seq_type prot \
     --input_file ../test_data/example_positives.fasta \
     --llm_truncation_seq_length 10240 \

@@ -55,9 +55,9 @@ Copy the **TrainedCheckPoint Files(`models/` + `logs/`)** from <href> http://47.
 
 ### Usage
 Firstly, predict whether a sequence has phosphate-solubilizing functionality.  
-The inference script: **`src/prediction.py`**(**`src/prediction.sh`**) or **`src/prediction_v2.py`**(**`src/prediction_v2.sh`**)
+The inference script: **`src/prediction_v1.py`**(**`src/prediction_v1.sh`**) or **`src/prediction_v2.py`**(**`src/prediction_v2.sh`**)
 
-```python prediction.py -h``` or ```python prediction_v2.py -h``` for **help**
+```python prediction_v2.py -h``` or ```python prediction_v2.py -h``` for **help**
 #### Binary Classification
 ```shell
 cd src/

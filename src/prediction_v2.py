@@ -702,6 +702,7 @@ def run(
                 seq=seq,
                 embedding_type="matrix" if "matrix" in input_type else "vector"
             )
+            torch.cuda.empty_cache()
         encoder.matrix_embedding_exists = True
         # embedding 完之后to device
         lucabase_model.to(lucapcycle_args.device)
@@ -752,7 +753,7 @@ def run(
                 row
             )
             predicted_results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
-    # torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
     # 删除embedding
     if os.path.exists(lucapcycle_args.emb_dir):
         shutil.rmtree(lucapcycle_args.emb_dir)
