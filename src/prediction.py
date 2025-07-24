@@ -428,7 +428,7 @@ def run(sequences, llm_truncation_seq_length, model_path, dataset_name, dataset_
                                    lucabase_model,
                                    row)
             results.append([seq_id, seq, cur_res[0][2], cur_res[0][3]])
-    # torch.cuda.empty_cache()
+    torch.cuda.empty_cache()
     return results
 
 
