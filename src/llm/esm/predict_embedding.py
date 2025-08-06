@@ -184,7 +184,7 @@ def complete_embedding_matrix(seq_id, seq_type, seq, truncation_seq_length, init
                             last_end = min(pos_idx + sliding_window, ori_seq_len)
                             seg_seq = seq[pos_idx - sliding_window:last_end]
                             print("segment idx: %d, seg seq len: %d" % (seg_idx, len(seg_seq)))
-                            seg_emb, seg_processed_seq = predict_embedding(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                            seg_emb, seg_processed_seq_len = predict_embedding(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
                                                                            trunc_type=model_args.trunc_type,
                                                                            embedding_type=embedding_type,
                                                                            repr_layers=[-1],
@@ -202,7 +202,7 @@ def complete_embedding_matrix(seq_id, seq_type, seq, truncation_seq_length, init
                             seg_idx += 1
                             remain = ori_seq_len - last_end
                             seg_seq = seq[ori_seq_len - 2 * sliding_window:ori_seq_len]
-                            seg_emb, seg_processed_seq = predict_embedding(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                            seg_emb, seg_processed_seq_len = predict_embedding(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
                                                                            trunc_type=model_args.trunc_type,
                                                                            embedding_type=embedding_type,
                                                                            repr_layers=[-1],
@@ -223,7 +223,7 @@ def complete_embedding_matrix(seq_id, seq_type, seq, truncation_seq_length, init
                             seg_idx += 1
                             last_start = min(pos_idx - sliding_window, -ori_seq_len)
                             seg_seq = seq[last_start: pos_idx + sliding_window]
-                            seg_emb, seg_processed_seq = predict_embedding(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                            seg_emb, seg_processed_seq_len = predict_embedding(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
                                                                            trunc_type=model_args.trunc_type,
                                                                            embedding_type=embedding_type,
                                                                            repr_layers=[-1],
@@ -241,7 +241,7 @@ def complete_embedding_matrix(seq_id, seq_type, seq, truncation_seq_length, init
                             seg_idx += 1
                             remain = last_start - ori_seq_len
                             seg_seq = seq[-ori_seq_len:-ori_seq_len + 2 * sliding_window]
-                            seg_emb, seg_processed_seq = predict_embedding(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                            seg_emb, seg_processed_seq_len = predict_embedding(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
                                                                            trunc_type=model_args.trunc_type,
                                                                            embedding_type=embedding_type,
                                                                            repr_layers=[-1],
@@ -274,7 +274,7 @@ def complete_embedding_matrix(seq_id, seq_type, seq, truncation_seq_length, init
                         seg_seq = seq[begin_seq_idx + seg_idx * cur_segment_len: begin_seq_idx + (seg_idx + 1) * cur_segment_len]
                         # print("segment idx: %d, seg_seq(%d): %s" % (seg_idx, len(seg_seq), seg_seq))
                         print("segment idx: %d, seg seq len: %d" % (seg_idx, len(seg_seq)))
-                        seg_emb, seg_processed_seq = predict_embedding(
+                        seg_emb, seg_processed_seq_len = predict_embedding(
                             sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
                             trunc_type=model_args.trunc_type,
                             embedding_type=embedding_type,
@@ -317,7 +317,7 @@ def complete_embedding_matrix(seq_id, seq_type, seq, truncation_seq_length, init
                         really_len = (ori_seq_len - (segment_num - 1) * cur_segment_len)
                         # print("first seg seq: %s" % first_seg_seq)
                         print("first seg seq len: %d, really len: %d" % (len(first_seg_seq), really_len))
-                        first_seg_emb, first_seg_processed_seq = predict_embedding(sample=[seq_id + "_seg_0", seq_type, first_seg_seq],
+                        first_seg_emb, first_seg_processed_seq_len = predict_embedding(sample=[seq_id + "_seg_0", seq_type, first_seg_seq],
                                                                                    trunc_type=model_args.trunc_type,
                                                                                    embedding_type=embedding_type,
                                                                                    repr_layers=[-1],
@@ -434,6 +434,7 @@ def predict_embedding(sample,
         try:
             out = global_model(tokens, repr_layers=repr_layers, return_contacts=False)
             truncate_len = min(truncation_seq_length, len(raw_seqs[0]))
+            processed_seq_len = truncate_len + 2
             if "representations" in embedding_type or "matrix" in embedding_type:
                 if matrix_add_special_token:
                     embedding = out["representations"][global_layer_size].to(device="cpu")[0, 1: truncate_len + 1].clone().numpy()
@@ -447,9 +448,9 @@ def predict_embedding(sample,
                 embedding = out["contacts"][global_layer_size].to(device="cpu")[0, :, :].clone().numpy()
                 embeddings["contacts"] = embedding
             if len(embeddings) > 1:
-                return embeddings, protein_seq
+                return embeddings, processed_seq_len
             elif len(embeddings) == 1:
-                return list(embeddings.items())[0][1], protein_seq
+                return list(embeddings.items())[0][1], processed_seq_len
             else:
                 return None, None
         except RuntimeError as e:
@@ -559,7 +560,7 @@ def main(args):
                     print("%s embedding error, max_len from %d truncate to %d" % (seq_id, truncation_seq_length,
                                                                                   int(truncation_seq_length * 0.95)))
                     truncation_seq_length = int(truncation_seq_length * 0.95)
-                    emb, processed_seq = predict_embedding(sample=[seq_id, seq_type, seq],
+                    emb, processed_seq_len = predict_embedding(sample=[seq_id, seq_type, seq],
                                                            trunc_type=args.trunc_type,
                                                            embedding_type=embedding_type,
                                                            repr_layers=[-1],

@@ -72,7 +72,7 @@ def complete_embedding_matrix_esm(seq_id,
                             last_end = min(pos_idx + sliding_window, ori_seq_len)
                             seg_seq = seq[pos_idx - sliding_window:last_end]
                             print("segment idx: %d, seg seq len: %d" % (seg_idx, len(seg_seq)))
-                            seg_emb, seg_processed_seq = predict_embedding_esm(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                            seg_emb, seg_processed_seq_len = predict_embedding_esm(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
                                                                                trunc_type=trunc_type,
                                                                                embedding_type=embedding_type,
                                                                                repr_layers=[-1],
@@ -90,7 +90,7 @@ def complete_embedding_matrix_esm(seq_id,
                             seg_idx += 1
                             remain = ori_seq_len - last_end
                             seg_seq = seq[ori_seq_len - 2 * sliding_window:ori_seq_len]
-                            seg_emb, seg_processed_seq = predict_embedding_esm(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                            seg_emb, seg_processed_seq_len = predict_embedding_esm(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
                                                                                trunc_type=trunc_type,
                                                                                embedding_type=embedding_type,
                                                                                repr_layers=[-1],
@@ -111,7 +111,7 @@ def complete_embedding_matrix_esm(seq_id,
                             seg_idx += 1
                             last_start = min(pos_idx - sliding_window, -ori_seq_len)
                             seg_seq = seq[last_start: pos_idx + sliding_window]
-                            seg_emb, seg_processed_seq = predict_embedding_esm(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                            seg_emb, seg_processed_seq_len = predict_embedding_esm(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
                                                                                trunc_type=trunc_type,
                                                                                embedding_type=embedding_type,
                                                                                repr_layers=[-1],
@@ -129,7 +129,7 @@ def complete_embedding_matrix_esm(seq_id,
                             seg_idx += 1
                             remain = last_start - ori_seq_len
                             seg_seq = seq[-ori_seq_len:-ori_seq_len + 2 * sliding_window]
-                            seg_emb, seg_processed_seq = predict_embedding_esm(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
+                            seg_emb, seg_processed_seq_len = predict_embedding_esm(sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
                                                                                trunc_type=trunc_type,
                                                                                embedding_type=embedding_type,
                                                                                repr_layers=[-1],
@@ -162,7 +162,7 @@ def complete_embedding_matrix_esm(seq_id,
                         seg_seq = seq[begin_seq_idx + seg_idx * cur_segment_len: begin_seq_idx + (seg_idx + 1) * cur_segment_len]
                         # print("segment idx: %d, seg_seq(%d): %s" % (seg_idx, len(seg_seq), seg_seq))
                         print("segment idx: %d, seg seq len: %d" % (seg_idx, len(seg_seq)))
-                        seg_emb, seg_processed_seq = predict_embedding_esm(
+                        seg_emb, seg_processed_seq_len = predict_embedding_esm(
                             sample=[seq_id + "_seg_%d" % seg_idx, seq_type, seg_seq],
                             trunc_type=trunc_type,
                             embedding_type=embedding_type,
@@ -205,7 +205,7 @@ def complete_embedding_matrix_esm(seq_id,
                         really_len = (ori_seq_len - (segment_num - 1) * cur_segment_len)
                         # print("first seg seq: %s" % first_seg_seq)
                         print("first seg seq len: %d, really len: %d" % (len(first_seg_seq), really_len))
-                        first_seg_emb, first_seg_processed_seq = predict_embedding_esm(sample=[seq_id + "_seg_0", seq_type, first_seg_seq],
+                        first_seg_emb, first_seg_processed_seq_len = predict_embedding_esm(sample=[seq_id + "_seg_0", seq_type, first_seg_seq],
                                                                                        trunc_type=trunc_type,
                                                                                        embedding_type=embedding_type,
                                                                                        repr_layers=[-1],
@@ -368,7 +368,7 @@ class Encoder(object):
                 else:
                     truncation_seq_length = self.seq_max_length - int(self.prepend_bos) - int(self.append_eos)
                     truncation_seq_length = min(seq_len, truncation_seq_length)
-                embedding_info, processed_seq = predict_embedding_esm(
+                embedding_info, processed_seq_len = predict_embedding_esm(
                     sample=[seq_id, seq],
                     trunc_type=self.trunc_type,
                     embedding_type=embedding_type,
@@ -385,7 +385,7 @@ class Encoder(object):
                     truncation_seq_length = (truncation_seq_length + int(self.prepend_bos) + int(self.append_eos)) * 0.95 \
                                             - int(self.prepend_bos) - int(self.append_eos)
                     truncation_seq_length = int(truncation_seq_length)
-                    embedding_info, processed_seq = predict_embedding_esm(
+                    embedding_info, processed_seq_len = predict_embedding_esm(
                         sample=[seq_id, seq],
                         trunc_type=self.trunc_type,
                         embedding_type=embedding_type,
