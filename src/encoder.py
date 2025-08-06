@@ -28,18 +28,21 @@ except ImportError as e:
 global_max_seq_len = 100000
 
 
-def complete_embedding_matrix_esm(seq_id,
-                                  seq_type,
-                                  seq,
-                                  truncation_seq_length,
-                                  init_emb,
-                                  trunc_type,
-                                  embedding_type,
-                                  matrix_add_special_token,
-                                  embedding_complete,
-                                  embedding_complete_seg_overlap,
-                                  device):
+def complete_embedding_matrix_esm(
+        seq_id,
+        seq_type,
+        seq,
+        truncation_seq_length,
+        init_emb,
+        trunc_type,
+        embedding_type,
+        matrix_add_special_token,
+        embedding_complete,
+        embedding_complete_seg_overlap,
+        device
+):
     if init_emb is not None and embedding_complete and ("representations" in embedding_type or "matrix" in embedding_type):
+        torch.cuda.empty_cache()
         ori_seq_len = len(seq)
         # 每次能处理这么长度
         # print("init_emb:", init_emb.shape)

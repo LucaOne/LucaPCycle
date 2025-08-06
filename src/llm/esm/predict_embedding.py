@@ -152,6 +152,7 @@ global_model, global_alphabet, global_version, global_layer_size = None, None, N
 
 def complete_embedding_matrix(seq_id, seq_type, seq, truncation_seq_length, init_emb, model_args, embedding_type):
     if init_emb is not None and model_args.embedding_complete and ("representations" in embedding_type or "matrix" in embedding_type):
+        torch.cuda.empty_cache()
         ori_seq_len = len(seq)
         # 每次能处理这么长度
         # print("init_emb:", init_emb.shape)
