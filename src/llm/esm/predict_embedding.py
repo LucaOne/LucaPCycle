@@ -227,6 +227,7 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
         try:
             out = global_model(tokens, repr_layers=repr_layers, return_contacts=False)
             truncate_len = min(truncation_seq_length, len(raw_seqs[0]))
+            processed_seq_len = truncate_len + 2
             if "representations" in embedding_type or "matrix" in embedding_type:
                 if matrix_add_special_token:
                     embedding = out["representations"][global_layer_size].to(device="cpu")[0, 0: truncate_len + 2].clone().numpy()
@@ -240,9 +241,9 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
                 embedding = out["contacts"][global_layer_size].to(device="cpu")[0, :, :].clone().numpy()
                 embeddings["contacts"] = embedding
             if len(embeddings) > 1:
-                return embeddings, protein_seq
+                return embeddings, processed_seq_len
             elif len(embeddings) == 1:
-                return list(embeddings.items())[0][1], protein_seq
+                return list(embeddings.items())[0][1], processed_seq_len
             else:
                 return None, None
         except RuntimeError as e:

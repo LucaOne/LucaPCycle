@@ -139,12 +139,14 @@ class Encoder(object):
         truncation_seq_length = min(len(seq), truncation_seq_length)
         while embedding_info is None:
             if self.llm_type == "esm":
-                embedding_info, processed_seq = predict_embedding_esm([seq_id, seq],
-                                                                      self.trunc_type,
-                                                                      embedding_type,
-                                                                      repr_layers=[-1],
-                                                                      truncation_seq_length=truncation_seq_length,
-                                                                      device=self.device)
+                embedding_info, processed_seq_len = predict_embedding_esm(
+                    [seq_id, seq],
+                    self.trunc_type,
+                    embedding_type,
+                    repr_layers=[-1],
+                    truncation_seq_length=truncation_seq_length,
+                    device=self.device
+                )
             else:
                 raise Exception("Not support the llm_type=%s" % self.llm_type)
             if embedding_info is not None:
