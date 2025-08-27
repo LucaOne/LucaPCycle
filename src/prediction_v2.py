@@ -788,9 +788,9 @@ def run_args():
 
     # for embedding
     parser.add_argument("--matrix_embedding_exists", action="store_true",
-                        help="the structural embedding is or not in advance. default: False")
+                        help="the seq embedding is or not in advance. default: False")
     parser.add_argument("--emb_dir", default=None, type=str,
-                        help="the structural embedding save dir in advance. default: None")
+                        help="the seq embedding save dir in advance. default: None")
     parser.add_argument("--truncation_seq_length", default=4096, type=int,
                         help="the truncation seq length for LLM, default: 4096")
 
