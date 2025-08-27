@@ -34,7 +34,7 @@ def main():
     parser.add_argument("--save_path", default=None, type=str, required=True, help="the results saved filepath")
     parser.add_argument("--truncation_seq_length", default=None, type=int, required=True, help="truncation seq length")
     parser.add_argument("--batch_size", default=8, type=int, required=True, help="batch size")
-    parser.add_argument("--emb_dir", default=None, type=str, help="the structural embedding save dir. default: None")
+    parser.add_argument("--emb_dir", default=None, type=str, help="the seq embedding save dir. default: None")
     parser.add_argument("--dataset_name", default="extra_p", type=str, required=True, help="the dataset name for model building.")
     parser.add_argument("--dataset_type", default="protein", type=str, required=True, help="the dataset type for model building.")
     parser.add_argument("--task_type", default=None, type=str, required=True, choices=["multi_label", "multi_class", "binary_class"], help="the task type for model building.")
