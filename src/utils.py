@@ -53,8 +53,8 @@ def to_device(device, batch):
     for item1 in batch.items():
         if item1[0] in ["seq_ids_a", "seq_ids_b", "seq_ids"]:
             continue
-        new_batch[item1[0]] = {}
         if isinstance(item1[1], dict):
+            new_batch[item1[0]] = {}
             for item2 in item1[1].items():
                 new_batch[item1[0]][item2[0]] = {}
                 if isinstance(item2[1], dict):
