@@ -250,7 +250,7 @@ def predict_embedding(sample, trunc_type, embedding_type, repr_layers=[-1], trun
             if e.args[0].startswith("CUDA out of memory"):
                 print(f"Failed (CUDA out of memory) on sequence {protein_id} of length {len(protein_seq)}.")
                 print("Please reduce the 'truncation_seq_length'")
-            # raise Exception(e)
+            raise Exception(e)
     return None, None
 
 
@@ -311,15 +311,16 @@ def main(args):
                 seq_id, seq = row[args.id_idx].strip(), row[args.seq_idx].upper()
             emb_filename = calc_emb_filename_by_seq_id(seq_id=seq_id, embedding_type=embedding_type)
             embedding_filepath = os.path.join(emb_save_path, emb_filename)
-            emb, processed_seq_len = predict_embedding([seq_id, seq_type, seq],
-                                                       args.trunc_type,
-                                                       embedding_type,
-                                                       repr_layers=[-1],
-                                                       truncation_seq_length=args.truncation_seq_length,
-                                                       device=args.device,
-                                                       version=args.llm_version,
-                                                       matrix_add_special_token=args.matrix_add_special_token
-                                                       )
+            emb, processed_seq_len = predict_embedding(
+                [seq_id, seq_type, seq],
+                args.trunc_type,
+                embedding_type,
+                repr_layers=[-1],
+                truncation_seq_length=args.truncation_seq_length,
+                device=args.device,
+                version=args.llm_version,
+                matrix_add_special_token=args.matrix_add_special_token
+            )
             # print("seq_len: %d" % len(seq))
             # print("emb shape:", embedding_info.shape)
             torch.save(emb, embedding_filepath)
@@ -330,14 +331,16 @@ def main(args):
 
     elif args.seq:
         print("input seq length: %d" % len(args.seq))
-        emb, processed_seq_len = predict_embedding([args.seq_id, seq_type, args.seq],
-                                                   args.trunc_type,
-                                                   embedding_type,
-                                                   repr_layers=[-1],
-                                                   truncation_seq_length=args.truncation_seq_length,
-                                                   device=args.device,
-                                                   version=args.llm_version,
-                                                   matrix_add_special_token=args.matrix_add_special_token)
+        emb, processed_seq_len = predict_embedding(
+            [args.seq_id, seq_type, args.seq],
+            args.trunc_type,
+            embedding_type,
+            repr_layers=[-1],
+            truncation_seq_length=args.truncation_seq_length,
+            device=args.device,
+            version=args.llm_version,
+            matrix_add_special_token=args.matrix_add_special_token
+        )
         print("done seq length: %d" % processed_seq_len)
         print(emb)
         print(emb.shape)
