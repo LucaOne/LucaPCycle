@@ -96,7 +96,7 @@ class Alphabet(object):
         with open(os.path.join(save_dir, "alphabet.pkl"), 'wb') as outp:
             pickle.dump(self, outp, pickle.HIGHEST_PROTOCOL)
 
-    def _tokenize(self, text) -> str:
+    def _tokenize(self, text) -> List[str]:
         return text.split()
 
     def tokenize(self, text, **kwargs) -> List[str]:
