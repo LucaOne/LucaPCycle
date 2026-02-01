@@ -889,7 +889,7 @@ def download_trained_checkpoint_lucapcycle(
                 model_input_type[model_idx],
                 model_time_str[model_idx]
             )
-            models_path = "models/%s/%s/%s/%s/%s/%s/checkpoint-step%s" % (
+            models_path = "models/%s/%s/%s/%s/%s/%s/checkpoint-%s" % (
                 model_dataset_name[model_idx],
                 model_dataset_type[model_idx],
                 model_task_type[model_idx],
