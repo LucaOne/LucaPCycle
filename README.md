@@ -66,7 +66,7 @@ python prediction_v2.py \
     --seq_type prot \
     --input_file ../test_data/examples.fasta \
     --emb_dir ../../test_data/examples/embedding/lucapcyclev3/ \
-    --llm_truncation_seq_length 10240 \
+    --truncation_seq_length 10240 \
     --model_path .. \
     --save_path ../predicted_results/test_data/examples_predicted.csv \
     --dataset_name extra_p_2_class_v3 \
@@ -79,7 +79,7 @@ python prediction_v2.py \
     --time_str 20240924203640 \
     --step 264284 \
     --threshold 0.2 \
-    --per_num 10000 \
+    --print_per_number 10000 \
     --gpu_id 0
 ```
 
@@ -92,7 +92,7 @@ python prediction_v2.py \
     --seq_type prot \
     --input_file ../test_data/example_positives.fasta \
     --emb_dir ../../test_data/example_positives/embedding/lucapcyclev3/ \
-    --llm_truncation_seq_length 10240 \
+    --truncation_seq_length 10240 \
     --model_path .. \
     --save_path ../predicted_results/test_data/example_positives_fine_grained_predicted.csv \
     --dataset_name extra_p_31_class_v3 \
@@ -105,7 +105,7 @@ python prediction_v2.py \
     --time_str 20240923094428 \
     --step 8569250 \
     --topk 10 \
-    --per_num 10000 \
+    --print_per_number 10000 \
     --gpu_id 0
 ```
 
@@ -131,8 +131,8 @@ python prediction_v2.py \
 
 3) Running parameters:
    * topk: `int`, the topk labels when inferring 31-classification, default: `None`(meaining k=1)
-   * llm_truncation_seq_length: `int`, the max seq length to truncation(depends on the length of your sequence and the size of your GPU memory. default: `4096`
-   * per_num: `int`, the print progress is determined by how many sequences are predicted.  default: `1000`
+   * truncation_seq_length: `int`, the max seq length to truncation(depends on the length of your sequence and the size of your GPU memory. default: `4096`
+   * print_per_number: `int`, the print progress is determined by how many sequences are predicted.  default: `1000`
    * threshold: `float`, the threshold for binary-classification, default: `0.1`, (positive>=threshold, negative<threshold, small value leads to high recall, and large value to high precision)
    * gpu_id: `int`, the gpu id to use(-1 for cpu), default: `-1`
 

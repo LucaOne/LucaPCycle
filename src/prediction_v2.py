@@ -570,7 +570,9 @@ def run(
 ):
     # step1: loading args
     global global_model_config, global_seq_subword, global_seq_tokenizer, global_struct_tokenizer, global_lucabase_model
-    # download_trained_checkpoint_lucapcycle(model_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    download_trained_checkpoint_lucapcycle(
+        model_dir=os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     model_dir = "%s/models/%s/%s/%s/%s/%s/%s/%s" % (
         model_path, dataset_name, dataset_type, task_type, model_type, input_type,
         time_str, step if step == "best" else "checkpoint-{}".format(step)
